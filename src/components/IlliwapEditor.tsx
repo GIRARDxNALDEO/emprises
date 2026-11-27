@@ -1,9 +1,10 @@
 import {useEffect,useState} from 'react'
 import {CalendarDays,FileImage,MapPinned,Printer,Upload} from 'lucide-react'
 import type {ZoneJson} from '../lib/exports'
+import {getBrandAsset,saveBrandAsset} from '../lib/sharedAssets'
 type Company='RHOTOR'|'NALDEO'
 type Affaire={reference:string,title:string,commune:string}
-type Props={affaire:Affaire,zones:ZoneJson[],company:Company,flightStart?:string,flightEnd?:string}
+type Props={affaire:Affaire,zones:ZoneJson[],company:Company,flightStart?:string,flightEnd?:string,canManageSharedAssets?:boolean}
 const contact:Record<Company,string>={RHOTOR:'06 15 04 46 21',NALDEO:'07 64 50 10 25'}
 const htmlEsc=(s:string)=>s.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]??c))
 const frenchDate=(s:string)=>s?new Intl.DateTimeFormat('fr-FR',{day:'numeric',month:'long',year:'numeric'}).format(new Date(s+'T12:00:00')):'DATE À COMPLÉTER'
@@ -57,37 +58,52 @@ const loadImage=(file:File):Promise<string>=>new Promise((resolve,reject)=>{
  if(file.size>15*1024*1024){reject(new Error('Image trop lourde (15 Mo maximum).'));return}
  const r=new FileReader();r.onload=()=>resolve(String(r.result));r.onerror=()=>reject(new Error('Lecture impossible'));r.readAsDataURL(file)
 })
-export function IlliwapEditor({affaire,zones,company,flightStart='',flightEnd=''}:Props){
+export function IlliwapEditor({affaire,zones,company,flightStart='',flightEnd='',canManageSharedAssets=false}:Props){
  const [org,setOrg]=useState<Company>(company)
  const [start,setStart]=useState(flightStart.slice(0,10))
  const [end,setEnd]=useState(flightEnd.slice(0,10))
  const [commune,setCommune]=useState(affaire.commune)
  const [notice,setNotice]=useState('Une opération de relevé aérien est programmée dans votre commune.')
  const [basemap,setBasemap]=useState<'plan'|'ortho'>('plan')
- const [photo,setPhoto]=useState(()=>{try{return localStorage.getItem('emprises_illiwap_cover_v1')??''}catch{return ''}})
+ const [photo,setPhoto]=useState('')
+ const [sharedPhoto,setSharedPhoto]=useState('')
+ const [sharedLogo,setSharedLogo]=useState('')
+ const [savingShared,setSavingShared]=useState(false)
+ const [sharedMessage,setSharedMessage]=useState('')
  const [logo,setLogo]=useState('')
  const [busy,setBusy]=useState(false)
  const [error,setError]=useState('')
  useEffect(()=>{setOrg(company)},[company])
+ useEffect(()=>{let cancelled=false;void getBrandAsset('cover/illiwap-cover').then(url=>{if(!cancelled)setSharedPhoto(url??'')});return()=>{cancelled=true}},[])
+ useEffect(()=>{let cancelled=false;setSharedLogo('');const path=org==='NALDEO'?'logos/naldeo-logo':'logos/rhotor-logo';void getBrandAsset(path).then(url=>{if(!cancelled)setSharedLogo(url??'')});return()=>{cancelled=true}},[org])
  useEffect(()=>{if(flightStart)setStart(flightStart.slice(0,10));if(flightEnd)setEnd(flightEnd.slice(0,10))},[flightStart,flightEnd])
  useEffect(()=>{setCommune(affaire.commune)},[affaire.commune])
  async function upload(e:React.ChangeEvent<HTMLInputElement>,kind:'photo'|'logo'){
   const f=e.target.files?.[0];if(!f)return
-  try{setError('');const data=await loadImage(f);if(kind==='photo'){setPhoto(data);try{localStorage.setItem('emprises_illiwap_cover_v1',data)}catch{setError('Photo chargée pour cette session, mais stockage local indisponible.')}}else setLogo(data)}
+  try{setError('');const data=await loadImage(f);if(kind==='photo')setPhoto(data);else setLogo(data)}
   catch(ex){setError(ex instanceof Error?ex.message:'Image invalide')}
   e.target.value=''
+ }
+ async function uploadShared(e:React.ChangeEvent<HTMLInputElement>,kind:'photo'|'logo'){
+  const file=e.target.files?.[0];if(!file||!canManageSharedAssets)return
+  const path=kind==='photo'?'cover/illiwap-cover':org==='NALDEO'?'logos/naldeo-logo':'logos/rhotor-logo'
+  setSavingShared(true);setError('');setSharedMessage('')
+  try{const url=await saveBrandAsset(path,file);if(kind==='photo'){setSharedPhoto(url);setPhoto('')}else{setSharedLogo(url);setLogo('')}setSharedMessage('Visuel commun enregistré : il sera disponible pour tous les collaborateurs et sur tous les appareils.')}
+  catch(ex){setError(ex instanceof Error?ex.message:'Impossible de sauvegarder le visuel partagé. Vérifie que la migration 013 est exécutée.')}
+  finally{setSavingShared(false);e.target.value=''}
  }
  function print(){
   if(!start||!end){setError('Renseigne les dates de début et de fin.');return}
   if(end<start){setError('La date de fin doit être postérieure ou égale à la date de début.');return}
-  if(org==='NALDEO'&&!logo){setError('Pour respecter la charte NALDEO, ajoute son fichier de logo officiel avant l’export.');return}
+  if(org==='NALDEO'&&!logo&&!sharedLogo){setError('Pour respecter la charte NALDEO, ajoute son fichier de logo officiel avant l’export.');return}
   const map=mapMarkup(zones,basemap)
   if(!map){setError('Enregistre une emprise polygonale avant de générer cette publication.');return}
   setError('');setBusy(true)
   const companyName=org==='NALDEO'?'NALDEO':'RHOTOR'
   const phone=contact[org]
-  const header=org==='RHOTOR'?(logo||new URL(`${import.meta.env.BASE_URL}rhotor-logo.png`,window.location.origin).href):logo
-  const photoHTML=photo?`<img src="${htmlEsc(photo)}" alt="Photographie drone" class="hero-img"/>`:'<div class="hero-placeholder"><div>MISSION DRONE</div><span>Photo à intégrer dans l’éditeur</span></div>'
+  const header=logo||sharedLogo||(org==='RHOTOR'?new URL(`${import.meta.env.BASE_URL}rhotor-logo.png`,window.location.origin).href:'')
+  const cover=photo||sharedPhoto
+  const photoHTML=cover?`<img src="${htmlEsc(cover)}" alt="Photographie drone" class="hero-img"/>`:'<div class="hero-placeholder"><div>MISSION DRONE</div><span>Photo à intégrer dans l’éditeur</span></div>'
   const title=`VOL DE DRONE`
   const html=`<!doctype html><html lang="fr"><head><meta charset="utf-8"/><title>${htmlEsc(affaire.reference)} — Publication Illiwap</title><style>
   @page{size:A5 portrait;margin:0}*{box-sizing:border-box}html,body{margin:0;font-family:Arial,Helvetica,sans-serif;color:#132f40;background:#eef2f5}body{-webkit-print-color-adjust:exact;print-color-adjust:exact}
@@ -134,17 +150,18 @@ export function IlliwapEditor({affaire,zones,company,flightStart='',flightEnd=''
  }
  return <section className="panel illiwap-editor"><div className="panel-head"><div><h3><FileImage size={18}/> Publication Illiwap · A5</h3><p className="hint">Avis aux habitants prêt à imprimer ou enregistrer en PDF. Le périmètre provient des emprises enregistrées.</p></div></div>
  <div className="illiwap-fields">
-  <label>Société signataire<select value={org} onChange={e=>setOrg(e.target.value as Company)}><option value="RHOTOR">RHOTOR</option><option value="NALDEO">NALDEO</option></select></label>
+  <label>Société signataire<select value={org} onChange={e=>{setOrg(e.target.value as Company);setLogo('')}}><option value="RHOTOR">RHOTOR</option><option value="NALDEO">NALDEO</option></select></label>
   <label>Commune<input value={commune} onChange={e=>setCommune(e.target.value)}/></label>
   <label><CalendarDays size={14}/> Début du vol<input type="date" value={start} onChange={e=>setStart(e.target.value)}/></label>
   <label><CalendarDays size={14}/> Fin du vol<input type="date" min={start} value={end} onChange={e=>setEnd(e.target.value)}/></label>
   <label className="illiwap-wide">Phrase d’introduction<textarea value={notice} onChange={e=>setNotice(e.target.value)} rows={2} maxLength={240}/></label>
   <label>Fond de carte<select value={basemap} onChange={e=>setBasemap(e.target.value as 'plan'|'ortho')}><option value="plan">Plan IGN</option><option value="ortho">Orthophotographie IGN</option></select></label>
-  <div className="illiwap-upload"><label><Upload size={14}/> Photo de couverture (JPG/PNG)<input type="file" accept="image/jpeg,image/png,image/webp" onChange={e=>void upload(e,'photo')}/></label><small>{photo?'Photo de couverture mémorisée comme défaut':'Photo fixe réutilisable pour toutes les publications — ajoute-la une seule fois sur ce navigateur'}</small></div>
-  <div className="illiwap-upload illiwap-wide"><label><Upload size={14}/> Logo officiel {org} (JPG/PNG)<input type="file" accept="image/jpeg,image/png,image/webp" onChange={e=>void upload(e,'logo')}/></label><small>{logo?'Logo personnalisé chargé':org==='RHOTOR'?'Logo RHOTOR du site utilisé par défaut':'Logo officiel NALDEO requis pour préserver la charte graphique'}</small></div>
+  <div className="illiwap-upload"><label><Upload size={14}/> Photo de couverture (JPG/PNG)<input type="file" accept="image/jpeg,image/png,image/webp" onChange={e=>void upload(e,'photo')}/></label><small>{photo?'Photo spécifique à cette publication':sharedPhoto?'Couverture partagée chargée automatiquement':'Aucune couverture partagée : un administrateur doit la définir'}</small></div>
+  <div className="illiwap-upload illiwap-wide"><label><Upload size={14}/> Logo officiel {org} (JPG/PNG)<input type="file" accept="image/jpeg,image/png,image/webp" onChange={e=>void upload(e,'logo')}/></label><small>{logo?'Logo spécifique à cette publication':sharedLogo?'Logo officiel partagé chargé automatiquement':org==='RHOTOR'?'Logo RHOTOR de l’application utilisé par défaut':'Logo officiel NALDEO partagé à installer par un administrateur'}</small></div>
  </div>
+ {canManageSharedAssets&&<div className="illiwap-shared"><h4>Bibliothèque de visuels communs · Administration</h4><p className="hint">Enregistre une seule fois les fichiers officiels. Ils seront disponibles sur tous les ordinateurs, sans stockage local. Ne publie que des images autorisées pour communication externe.</p><div className="illiwap-shared-grid"><label>Définir la photo de couverture commune<input disabled={savingShared} type="file" accept="image/jpeg,image/png,image/webp" onChange={e=>void uploadShared(e,'photo')}/></label><label>Définir le logo officiel commun {org}<input disabled={savingShared} type="file" accept="image/jpeg,image/png,image/webp" onChange={e=>void uploadShared(e,'logo')}/></label></div>{sharedMessage&&<p className="hint" role="status">{sharedMessage}</p>}</div>}
  <div className="illiwap-actions"><span><MapPinned size={16}/> {zones.length} emprise(s) intégrée(s) · {contact[org]}</span><button disabled={busy||!zones.length} onClick={print}><Printer size={17}/> Générer la publication A5</button></div>
  {error&&<p className="illiwap-error" role="alert">{error}</p>}
- <p className="hint">Les photographies et logos sélectionnés sont utilisés localement dans le navigateur ; ils ne sont pas envoyés à GitHub. L'export comporte une carte réelle et non une emprise fictive.</p>
+ <p className="hint">Les logos et photographies communs sont servis depuis Supabase Storage, pour tous les collaborateurs. Un fichier choisi dans « Photo de couverture » ou « Logo officiel » reste une exception propre à cette publication. Les visuels communs doivent être autorisés à la diffusion publique.</p>
  </section>
 }
