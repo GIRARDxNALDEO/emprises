@@ -233,3 +233,44 @@
 .illiwap-actions>span{display:flex;gap:8px;align-items:center;color:#a4cbd3;font-size:12px}
 .illiwap-error{background:#4c2b30;border:1px solid #ac5b5b;border-radius:9px;padding:12px;color:#ffd1cc}
 @media(max-width:660px){.illiwap-fields{grid-template-columns:1fr}.illiwap-wide{grid-column:auto}.illiwap-actions{flex-direction:column;align-items:stretch}.illiwap-actions button{width:100%}}
+
+/* Professional A4 quote builder and fiscal 4CV travel calculator */
+.quote-builder{background:linear-gradient(150deg,#112d3c,#102936);border-color:#345a67}
+.quote-builder .panel-head{align-items:flex-start;gap:12px}
+.quote-builder .panel-head h3{display:flex;align-items:center;gap:9px}
+.quote-builder .panel-head p{margin:6px 0 0}
+.quote-builder .panel-head>button{font-size:11px;flex-shrink:0}
+.quote-figures{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:17px 0}
+.quote-figures>div{display:flex;flex-direction:column;gap:9px;border:1px solid #375362;background:#152f3c;border-radius:12px;padding:16px;min-width:0}
+.quote-figures span{color:#a2bdc7;font-size:11px;font-weight:650}
+.quote-figures strong{font-size:24px;font-weight:800;color:#f1fafb;letter-spacing:-.035em;overflow-wrap:anywhere}
+.quote-figures .quote-total{border-color:#32979d;background:#164350}
+.quote-section{border-top:1px solid #335360;margin-top:20px;padding-top:20px}
+.quote-section h4{font-size:15px;color:#ecf8fa;display:flex;align-items:center;gap:9px;margin:0 0 16px}
+.quote-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:15px 18px;align-items:end}
+.quote-grid label{display:flex;flex-direction:column;align-items:stretch;gap:7px;min-width:0}
+.quote-grid textarea{background:#081e2b;color:#dfeff1;border:1px solid #32515d;border-radius:9px;padding:11px 12px;font:inherit;resize:vertical;width:100%}
+.quote-grid .quote-full{grid-column:1/-1}
+.quote-origin{display:grid;gap:8px;align-self:center;padding:10px 14px;background:#153744;border-radius:8px;border:1px solid #305767}
+.quote-origin span{font-size:11px;color:#97b6c2}
+.quote-origin strong{font-size:12px;color:#edf8f8}
+.quote-section>.hint{display:flex;align-items:flex-start;gap:7px;margin:13px 0;line-height:1.6}
+.quote-section>.hint svg{flex-shrink:0;margin-top:1px}
+.quote-km{margin-top:15px}
+.quote-checkbox{display:flex!important;flex-direction:row!important;gap:10px!important;align-items:center!important;align-self:center;font-weight:700;color:#d6eaeb}
+.quote-checkbox input{width:17px;height:17px;accent-color:#13a29f;flex:0 0 17px}
+.quote-trip-result{display:flex;gap:20px;flex-wrap:wrap;justify-content:space-between;padding:13px 15px;background:#0b303d;border-radius:10px;border:1px solid #297884;font-size:12px;color:#b2cbd3}
+.quote-trip-result b{color:#effbfc;font-size:14px}
+.quote-extras{grid-template-columns:minmax(0,1.7fr) minmax(90px,.55fr) minmax(130px,.8fr) auto}
+.quote-extras button{white-space:nowrap}
+.quote-extra-row{display:flex;align-items:center;gap:15px;justify-content:space-between;margin-top:9px;background:#183b48;border:1px solid #2c5260;border-radius:8px;padding:9px 13px;color:#d5e9eb;font-size:12px}
+.quote-extra-row strong{margin-left:auto;white-space:nowrap}
+.quote-extra-row button{font-size:11px;padding:7px 10px}
+.quote-file{border:1px dashed #487887;border-radius:8px;padding:11px}
+.quote-file input[type=file]{padding:8px;font-size:11px}
+.quote-file small{color:#9cb9c3}
+.quote-footer{margin-top:23px;padding-top:17px;border-top:1px solid #345764;display:flex;justify-content:space-between;gap:12px;align-items:center}
+.quote-footer>span{display:flex;align-items:center;gap:8px;color:#aac9d0;font-size:12px}
+.quote-alert{border:1px solid #a46562;background:#503037;color:#ffdfd4;padding:12px;border-radius:9px;line-height:1.5;font-size:12px}
+@media(max-width:850px){.quote-extras{grid-template-columns:repeat(2,minmax(0,1fr))}.quote-extras>button{align-self:end}}
+@media(max-width:650px){.quote-builder .panel-head{flex-direction:column}.quote-figures{grid-template-columns:1fr}.quote-grid,.quote-extras{grid-template-columns:1fr}.quote-grid .quote-full{grid-column:auto}.quote-footer{flex-direction:column;align-items:stretch}.quote-footer button{width:100%}}
