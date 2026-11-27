@@ -6,31 +6,5 @@
 .export-pref{padding:16px;margin-top:18px;background:rgba(0,160,154,.055);border:1px solid rgba(0,160,154,.23);border-radius:12px}
 .export-pref h3{margin:0 0 14px}.export-pref .new-form{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px}.estimate-result{padding:16px;border-radius:12px;background:rgba(0,160,154,.12);margin:15px 0}.estimate-result strong{font-size:23px}
 
-
-/* Auth layout: center independently of other app views and prevent horizontal overflow. */
-html,body,#root{min-height:100%;width:100%;max-width:100%;margin:0}
-.auth-page{
-  position:fixed;
-  inset:0;
-  width:100vw;
-  min-height:100vh;
-  min-height:100dvh;
-  display:flex;
-  justify-content:center;
-  align-items:center;
-  overflow-x:hidden;
-  overflow-y:auto;
-  padding:clamp(16px,4vw,32px);
-}
-.auth-box{
-  flex:0 1 430px;
-  width:100%;
-  max-width:430px;
-  margin:auto;
-}
-.auth-box>img{display:block;margin-inline:auto}
-.auth-box>.eyebrow,.auth-box>h1,.auth-box>p{text-align:center}
-@media(max-width:480px){
-  .auth-box{padding:clamp(20px,5vw,32px)}
-  .auth-box h1{font-size:30px}
-}
+/* Center the RHOTOR logo without changing the login form layout. */
+.auth-box > img { display:block; margin-left:auto; margin-right:auto; }
