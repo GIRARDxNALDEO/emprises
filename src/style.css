@@ -29,3 +29,17 @@
 .map-search-results button{text-align:left;justify-content:flex-start;font-weight:500}
 .map-drawing-hint{margin:4px 0 12px;color:#61dfd4}
 @media(max-width:650px){.map-search{flex-direction:column}.map-search button{width:100%}}
+
+/* NALDEO brand on authenticated workspace; access rights continue to be enforced by Supabase RLS. */
+.theme-naldeo{--brand-primary:#146e83;--brand-accent:#53afbb;color:#eaf2f5}
+.theme-naldeo .sidebar{background:#102b3b;border-right-color:#306779}
+.theme-naldeo .brand{border-bottom-color:#39788b}
+.theme-naldeo .eyebrow,.theme-naldeo .brand small{color:#78d3dd}
+.theme-naldeo button:not(.ghost):not(.danger):not(.affaire-row){background:#167b91}
+.theme-naldeo button:not(.ghost):not(.danger):not(.affaire-row):hover{background:#208da3}
+.theme-naldeo .panel{border-color:#37596b}
+.theme-naldeo .status{border-color:#43879c;color:#8de0e4}
+.theme-naldeo .naldeo-wordmark{font-family:Arial,Helvetica,sans-serif;color:#f4fdff;font-size:23px;font-weight:800;letter-spacing:.12em;white-space:nowrap}
+.theme-naldeo .brand{flex-wrap:wrap}
+.theme-naldeo .brand>div:last-child{min-width:0}
+.theme-naldeo .brand strong{font-size:16px}
