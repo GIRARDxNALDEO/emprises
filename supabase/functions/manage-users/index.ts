@@ -80,7 +80,7 @@ Deno.serve(async req=>{
       redirectTo:'https://girardxnaldeo.github.io/emprises/'
     })
     if(invitation.error)throw Error('Invitation non envoyée : '+invitation.error.message+' — Vérifier la configuration SMTP de Supabase.')
-    target=invitation.data.user
+    target=invitation.data.user??undefined
     invited=true
    }
    if(!target?.id)throw Error('Création du compte non confirmée par Supabase.')
