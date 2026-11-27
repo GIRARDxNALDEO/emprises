@@ -3,7 +3,7 @@ import {CalendarDays,FileImage,MapPinned,Printer,Upload} from 'lucide-react'
 import type {ZoneJson} from '../lib/exports'
 type Company='RHOTOR'|'NALDEO'
 type Affaire={reference:string,title:string,commune:string}
-type Props={affaire:Affaire,zones:ZoneJson[],company:Company}
+type Props={affaire:Affaire,zones:ZoneJson[],company:Company,flightStart?:string,flightEnd?:string}
 const contact:Record<Company,string>={RHOTOR:'06 15 04 46 21',NALDEO:'07 64 50 10 25'}
 const htmlEsc=(s:string)=>s.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]??c))
 const frenchDate=(s:string)=>s?new Intl.DateTimeFormat('fr-FR',{day:'numeric',month:'long',year:'numeric'}).format(new Date(s+'T12:00:00')):'DATE À COMPLÉTER'
@@ -57,10 +57,10 @@ const loadImage=(file:File):Promise<string>=>new Promise((resolve,reject)=>{
  if(file.size>15*1024*1024){reject(new Error('Image trop lourde (15 Mo maximum).'));return}
  const r=new FileReader();r.onload=()=>resolve(String(r.result));r.onerror=()=>reject(new Error('Lecture impossible'));r.readAsDataURL(file)
 })
-export function IlliwapEditor({affaire,zones,company}:Props){
+export function IlliwapEditor({affaire,zones,company,flightStart='',flightEnd=''}:Props){
  const [org,setOrg]=useState<Company>(company)
- const [start,setStart]=useState('')
- const [end,setEnd]=useState('')
+ const [start,setStart]=useState(flightStart.slice(0,10))
+ const [end,setEnd]=useState(flightEnd.slice(0,10))
  const [commune,setCommune]=useState(affaire.commune)
  const [notice,setNotice]=useState('Une opération de relevé aérien est programmée dans votre commune.')
  const [basemap,setBasemap]=useState<'plan'|'ortho'>('plan')
@@ -69,6 +69,7 @@ export function IlliwapEditor({affaire,zones,company}:Props){
  const [busy,setBusy]=useState(false)
  const [error,setError]=useState('')
  useEffect(()=>{setOrg(company)},[company])
+ useEffect(()=>{if(flightStart)setStart(flightStart.slice(0,10));if(flightEnd)setEnd(flightEnd.slice(0,10))},[flightStart,flightEnd])
  useEffect(()=>{setCommune(affaire.commune)},[affaire.commune])
  async function upload(e:React.ChangeEvent<HTMLInputElement>,kind:'photo'|'logo'){
   const f=e.target.files?.[0];if(!f)return
