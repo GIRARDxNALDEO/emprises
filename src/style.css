@@ -216,3 +216,20 @@
 .hud-error{margin:0;background:#483032;color:#ffe0cc;border:1px solid #9b5757;padding:12px 14px;border-radius:10px}
 @media(max-width:1230px){.hud-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.hud-main-grid{grid-template-columns:1fr}}
 @media(max-width:650px){.hud-intro{flex-direction:column;align-items:flex-start}.hud-intro h2{font-size:26px}.hud-stats{gap:8px}.hud-stat{min-height:127px;padding:14px}.hud-stat strong{font-size:29px}.hud-stat>span{font-size:11px}.hud-missions,.hud-next{padding:15px}.hud-mission{padding:10px;gap:9px}.hud-mission-date{width:49px;flex-basis:49px}.hud-mission-description strong{font-size:12px}.hud-section-count{white-space:normal}}
+
+/* Illiwap communication generator */
+.illiwap-editor{background:linear-gradient(140deg,#122d3c,#0f2635);border-color:#346070}
+.illiwap-editor .panel-head p{margin:7px 0 0}
+.illiwap-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:17px;margin-top:17px}
+.illiwap-fields label{display:flex;flex-direction:column;align-items:stretch;gap:8px;min-width:0}
+.illiwap-fields label:has(svg){gap:7px}
+.illiwap-fields textarea{background:#091f2b;color:#e6f1f3;border:1px solid #32515d;border-radius:9px;padding:12px;resize:vertical;font:inherit}
+.illiwap-wide{grid-column:1/-1}
+.illiwap-upload{background:#133443;border:1px dashed #4a7280;border-radius:11px;padding:13px}
+.illiwap-upload label{font-weight:700;color:#d3eef0;gap:9px}
+.illiwap-upload input[type=file]{border:0;background:#0e2734;padding:8px;font-size:11px}
+.illiwap-upload small{display:block;margin-top:8px;color:#a4bfc8;font-size:11px}
+.illiwap-actions{display:flex;justify-content:space-between;gap:16px;align-items:center;margin-top:18px;border-top:1px solid #294a5a;padding-top:17px}
+.illiwap-actions>span{display:flex;gap:8px;align-items:center;color:#a4cbd3;font-size:12px}
+.illiwap-error{background:#4c2b30;border:1px solid #ac5b5b;border-radius:9px;padding:12px;color:#ffd1cc}
+@media(max-width:660px){.illiwap-fields{grid-template-columns:1fr}.illiwap-wide{grid-column:auto}.illiwap-actions{flex-direction:column;align-items:stretch}.illiwap-actions button{width:100%}}
