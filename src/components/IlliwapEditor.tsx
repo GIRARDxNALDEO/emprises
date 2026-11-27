@@ -64,7 +64,7 @@ export function IlliwapEditor({affaire,zones,company,flightStart='',flightEnd=''
  const [commune,setCommune]=useState(affaire.commune)
  const [notice,setNotice]=useState('Une opération de relevé aérien est programmée dans votre commune.')
  const [basemap,setBasemap]=useState<'plan'|'ortho'>('plan')
- const [photo,setPhoto]=useState('')
+ const [photo,setPhoto]=useState(()=>{try{return localStorage.getItem('emprises_illiwap_cover_v1')??''}catch{return ''}})
  const [logo,setLogo]=useState('')
  const [busy,setBusy]=useState(false)
  const [error,setError]=useState('')
@@ -73,7 +73,7 @@ export function IlliwapEditor({affaire,zones,company,flightStart='',flightEnd=''
  useEffect(()=>{setCommune(affaire.commune)},[affaire.commune])
  async function upload(e:React.ChangeEvent<HTMLInputElement>,kind:'photo'|'logo'){
   const f=e.target.files?.[0];if(!f)return
-  try{setError('');const data=await loadImage(f);if(kind==='photo')setPhoto(data);else setLogo(data)}
+  try{setError('');const data=await loadImage(f);if(kind==='photo'){setPhoto(data);try{localStorage.setItem('emprises_illiwap_cover_v1',data)}catch{setError('Photo chargée pour cette session, mais stockage local indisponible.')}}else setLogo(data)}
   catch(ex){setError(ex instanceof Error?ex.message:'Image invalide')}
   e.target.value=''
  }
@@ -93,27 +93,27 @@ export function IlliwapEditor({affaire,zones,company,flightStart='',flightEnd=''
   @page{size:A5 portrait;margin:0}*{box-sizing:border-box}html,body{margin:0;font-family:Arial,Helvetica,sans-serif;color:#132f40;background:#eef2f5}body{-webkit-print-color-adjust:exact;print-color-adjust:exact}
   .bar{max-width:148mm;margin:0 auto;background:#e9f5f4;padding:12px;display:flex;gap:16px;align-items:center;justify-content:space-between;font:12px Arial}.bar button{border:0;border-radius:5px;background:#087c85;color:white;padding:11px 15px;font-weight:bold;cursor:pointer}
   .sheet{width:148mm;height:210mm;background:#fff;margin:0 auto;overflow:hidden;box-shadow:0 8px 28px #1233}
-  .hero{position:relative;height:48mm;background:#d7e6ed;overflow:hidden}
-  .hero-img{width:100%;height:100%;object-fit:cover;display:block}
+  .hero{position:relative;height:41mm;background:#d7e6ed;overflow:hidden}
+  .hero-img{width:100%;height:100%;object-fit:cover;object-position:center 34%;display:block}
   .hero-placeholder{height:100%;background:linear-gradient(130deg,#12394a,#168e94);color:white;display:flex;flex-direction:column;justify-content:center;padding:15mm}.hero-placeholder div{font-size:20pt;font-weight:bold}.hero-placeholder span{font-size:9pt;margin-top:3mm}
   .hero:after{content:'';height:2mm;position:absolute;bottom:0;left:0;right:0;background:${org==='RHOTOR'?'#0c9697':'#176f94'}}
-  .logo{position:absolute;right:7mm;top:6mm;padding:2.5mm 4mm;max-width:38mm;max-height:15mm;object-fit:contain;background:#fff;border-radius:1.5mm}
-  .body{padding:7mm 9mm 0}.kicker{font-size:7pt;color:#16828b;font-weight:800;letter-spacing:1.6px}
+  .logo{position:absolute;right:7mm;top:5mm;padding:0;max-width:43mm;max-height:18mm;object-fit:contain;background:transparent;border-radius:0}
+  .body{padding:6mm 9mm 0}.kicker{font-size:7pt;color:#16828b;font-weight:800;letter-spacing:1.6px}
   h1{margin:2mm 0 4mm;font-size:27pt;line-height:1.05;letter-spacing:-1.1px;font-weight:900}
   .lead{font-size:10pt;line-height:1.37;margin:0 0 4mm;font-weight:550}
   .date{display:flex;align-items:center;gap:3mm;padding:3mm 4mm;margin:4mm 0 4mm;background:#e9f4f4;border-left:1.1mm solid #008e94;font-size:9pt}
   .date strong{font-size:11pt}.subhead{display:flex;justify-content:space-between;align-items:center;margin:0 0 2mm;font-size:8pt;font-weight:800;text-transform:uppercase;letter-spacing:.7px}
   .subhead span{color:#547580;font-weight:500;text-transform:none;letter-spacing:0}
-  .map{height:70mm;position:relative;overflow:hidden;background:#e3eaed;border:1px solid #bdd1d7}
+  .map{height:60mm;position:relative;overflow:hidden;background:#e3eaed;border:1px solid #bdd1d7}
   .map>img{position:absolute;inset:0;width:100%;height:100%;object-fit:fill}
   .map>svg{position:absolute;inset:0;width:100%;height:100%}
   .north{position:absolute;right:3mm;top:3mm;background:white;border-radius:2px;padding:2mm;font-weight:800;font-size:11pt}
   .map-scale{position:absolute;bottom:2mm;left:2mm;background:#fffffff0;padding:2mm;font-size:7pt;font-weight:bold;display:grid;gap:1mm}
-  .legal{font-size:7.1pt;line-height:1.35;color:#344f60;margin:4mm 0 0}
+  .legal{font-size:6.7pt;line-height:1.28;color:#344f60;margin:4mm 0 0}
   .legal strong{color:#0c6f78}
-  .foot{margin:4mm 9mm 0;border-top:1px solid #c9d9de;padding:3.5mm 0;display:flex;align-items:center;justify-content:space-between;gap:5mm;font-size:8pt}
+  .foot{margin:2.5mm 9mm 0;border-top:1px solid #c9d9de;padding:2.5mm 0;display:flex;align-items:center;justify-content:space-between;gap:5mm;font-size:8pt}
   .foot strong{font-size:11pt;color:#0a5767;white-space:nowrap}
-  .tiny{font-size:6.5pt;color:#748b94;margin:1mm 9mm}
+  .tiny{font-size:6.5pt;color:#748b94;margin:0.5mm 9mm}
   @media print{html,body{width:148mm;height:210mm;background:white}.bar{display:none}.sheet{box-shadow:none;margin:0;page-break-after:avoid}}
   </style></head><body><div class="bar"><span id="map-state">Chargement du fond cartographique IGN…</span><button id="print" disabled onclick="window.print()">Imprimer / Enregistrer en PDF A5</button></div><article class="sheet">
   <div class="hero">${photoHTML}<img class="logo" src="${htmlEsc(header)}" alt="Logo officiel ${companyName}"/></div>
@@ -140,7 +140,7 @@ export function IlliwapEditor({affaire,zones,company,flightStart='',flightEnd=''
   <label><CalendarDays size={14}/> Fin du vol<input type="date" min={start} value={end} onChange={e=>setEnd(e.target.value)}/></label>
   <label className="illiwap-wide">Phrase d’introduction<textarea value={notice} onChange={e=>setNotice(e.target.value)} rows={2} maxLength={240}/></label>
   <label>Fond de carte<select value={basemap} onChange={e=>setBasemap(e.target.value as 'plan'|'ortho')}><option value="plan">Plan IGN</option><option value="ortho">Orthophotographie IGN</option></select></label>
-  <div className="illiwap-upload"><label><Upload size={14}/> Photo de couverture (JPG/PNG)<input type="file" accept="image/jpeg,image/png,image/webp" onChange={e=>void upload(e,'photo')}/></label><small>{photo?'Photo sélectionnée':'Choisis ta photo de drone pour le haut de l’affiche'}</small></div>
+  <div className="illiwap-upload"><label><Upload size={14}/> Photo de couverture (JPG/PNG)<input type="file" accept="image/jpeg,image/png,image/webp" onChange={e=>void upload(e,'photo')}/></label><small>{photo?'Photo de couverture mémorisée comme défaut':'Photo fixe réutilisable pour toutes les publications — ajoute-la une seule fois sur ce navigateur'}</small></div>
   <div className="illiwap-upload illiwap-wide"><label><Upload size={14}/> Logo officiel {org} (JPG/PNG)<input type="file" accept="image/jpeg,image/png,image/webp" onChange={e=>void upload(e,'logo')}/></label><small>{logo?'Logo personnalisé chargé':org==='RHOTOR'?'Logo RHOTOR du site utilisé par défaut':'Logo officiel NALDEO requis pour préserver la charte graphique'}</small></div>
  </div>
  <div className="illiwap-actions"><span><MapPinned size={16}/> {zones.length} emprise(s) intégrée(s) · {contact[org]}</span><button disabled={busy||!zones.length} onClick={print}><Printer size={17}/> Générer la publication A5</button></div>
