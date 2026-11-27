@@ -159,3 +159,60 @@
 @keyframes weather-rotate{to{transform:rotate(360deg)}}
 @media(max-width:1120px){.weather-days{grid-template-columns:repeat(5,minmax(110px,1fr));overflow-x:auto;padding-bottom:6px}.weather-summary{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:600px){.mission-tabs{width:100%}.mission-tabs button{flex:1;font-size:12px;padding:10px}.flight-weather{padding:15px}.flight-weather-head{flex-direction:column}.weather-refresh{align-self:flex-end}.weather-days{grid-template-columns:repeat(5,120px)}.weather-metric strong{font-size:20px}.weather-disclaimer{font-size:10px}}
+
+/* EMPRISES mission-control HUD dashboard */
+.sidebar nav button.nav-active{background:#163b49;color:#fff;box-shadow:inset 3px 0 0 #27c2c3}
+.hud-dashboard{display:grid;gap:22px;max-width:1450px}
+.hud-intro{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;padding:22px 0 3px}
+.hud-overline,.hud-section-tag{display:inline-flex;gap:8px;align-items:center;color:#74ced4;font-size:10px;font-weight:800;letter-spacing:.14em}
+.hud-intro h2{font-size:32px;letter-spacing:-.04em;line-height:1.15;margin:10px 0 9px}
+.hud-intro p{color:#9ebbc6;font-size:13px;margin:0}
+.hud-refresh{border:1px solid #355868;background:#173441;color:#d8eef1;font-size:12px;padding:11px 16px}
+.hud-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.hud-stat{display:flex;flex-direction:column;align-items:stretch;gap:13px;min-height:150px;text-align:left;padding:19px 20px;background:linear-gradient(148deg,#183747 0%,#112938 100%);border:1px solid #355460;border-radius:15px;transition:transform .15s,background .15s}
+.hud-stat:hover{transform:translateY(-2px);background:#1a4353}
+.hud-stat>span{display:flex;align-items:center;gap:8px;color:#adcbd3;font-size:12px;font-weight:700;white-space:normal}
+.hud-stat strong{font-size:35px;line-height:1;font-weight:800;letter-spacing:-.05em;color:#fff}
+.hud-stat>small{display:flex;align-items:center;gap:5px;color:#88aab6;font-size:11px;font-weight:550}
+.hud-stat-alert{border-color:#a8733c;background:linear-gradient(145deg,#483727,#162c38)}
+.hud-stat-alert>span{color:#f5cca1}
+.hud-main-grid{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(265px,.75fr);gap:17px}
+.hud-missions,.hud-next{padding:24px}
+.hud-main-grid .panel-head{margin-bottom:15px;align-items:flex-end}
+.hud-main-grid .panel-head h3{margin:8px 0 0;font-size:20px}
+.hud-section-count{color:#8fb0bb;font-size:11px;font-weight:650;white-space:nowrap}
+.hud-mission-list{display:grid;gap:8px}
+.hud-mission{background:#152f3c;border:1px solid #2b4d5a;border-radius:11px;display:flex;align-items:center;justify-content:flex-start;gap:15px;text-align:left;padding:13px;color:#d9ebef;width:100%;transition:border-color .15s,background .15s}
+.hud-mission:hover{border-color:#4bb7c1;background:#193d4c}
+.hud-mission-date{display:flex;align-items:center;justify-content:center;flex-direction:column;width:59px;height:61px;flex:0 0 59px;background:#0c5c67;border-radius:9px;border:1px solid #167d87}
+.hud-mission-date strong{font-size:24px;font-weight:800;line-height:1}
+.hud-mission-date small{text-transform:uppercase;font-size:10px;font-weight:800;margin-top:4px}
+.hud-mission-date.undated{background:#1c3946;border-color:#355464;color:#abc6ce}
+.hud-mission-date.undated small{font-size:9px;text-transform:none}
+.hud-mission-description{display:flex;flex-direction:column;gap:5px;min-width:0;flex:1}
+.hud-mission-description strong{font-size:14px;line-height:1.25;overflow-wrap:anywhere}
+.hud-mission-ref{font-size:10px;font-weight:800;letter-spacing:.07em;color:#82ccd2}
+.hud-mission-description small{display:flex;gap:6px;align-items:center;flex-wrap:wrap;color:#8eafba;font-size:11px}
+.hud-mid-dot{opacity:.5}
+.hud-mission-arrow{color:#6cc5cd;flex-shrink:0}
+.hud-caption{font-size:11px;line-height:1.6;color:#8aa9b4;display:flex;gap:8px;align-items:flex-start;margin:12px 0 0}
+.hud-caption svg{flex-shrink:0;margin-top:2px}
+.hud-no-missions{display:flex;flex-direction:column;align-items:flex-start;gap:12px;color:#96b5bf;padding:22px 0}
+.hud-no-missions p{margin:0;font-size:13px}
+.hud-no-missions button{font-size:12px}
+.hud-next{background:linear-gradient(145deg,#123743,#122837);border-color:#33616b}
+.hud-next-meta{display:flex;align-items:center;justify-content:space-between;gap:9px;margin:18px 0 10px}
+.hud-next-meta>span:first-child{font-size:11px;letter-spacing:.12em;font-weight:800;color:#6ad1d5}
+.hud-next-status{border:1px solid #386a72;border-radius:100px;padding:5px 9px;font-size:10px;color:#a2d9dc}
+.hud-next h4{font-size:20px;letter-spacing:-.02em;line-height:1.3;margin:14px 0}
+.hud-next p{display:flex;align-items:center;gap:7px;font-size:13px;color:#afc7cf}
+.hud-next-detail{border-top:1px solid #355866;padding-top:15px;margin-top:22px;display:grid;gap:6px}
+.hud-next-detail span{color:#8dafba;font-size:11px}
+.hud-next-detail strong{color:#fff;font-size:14px}
+.hud-next-open{margin-top:22px;width:100%;background:#0f8589}
+.hud-weather-head{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-top:5px}
+.hud-weather-head h3{font-size:20px;margin:8px 0 0;display:flex;gap:9px;align-items:center}
+.hud-dashboard>.flight-weather{margin-top:-10px}
+.hud-error{margin:0;background:#483032;color:#ffe0cc;border:1px solid #9b5757;padding:12px 14px;border-radius:10px}
+@media(max-width:1230px){.hud-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.hud-main-grid{grid-template-columns:1fr}}
+@media(max-width:650px){.hud-intro{flex-direction:column;align-items:flex-start}.hud-intro h2{font-size:26px}.hud-stats{gap:8px}.hud-stat{min-height:127px;padding:14px}.hud-stat strong{font-size:29px}.hud-stat>span{font-size:11px}.hud-missions,.hud-next{padding:15px}.hud-mission{padding:10px;gap:9px}.hud-mission-date{width:49px;flex-basis:49px}.hud-mission-description strong{font-size:12px}.hud-section-count{white-space:normal}}
