@@ -15,8 +15,12 @@ export function ZoneMap({affaireId,zones,onSaved,canEdit}:Props){
  const searchMarker=useRef<L.CircleMarker|null>(null)
  const group=useRef<L.FeatureGroup|null>(null)
  const parcelLayer=useRef<L.TileLayer.WMS|null>(null)
+ const restrictionLayer=useRef<L.TileLayer.WMS|null>(null)
  const baseLayer=useRef<L.TileLayer|null>(null)
  const [showParcels,setShowParcels]=useState(false)
+ const [showRestrictions,setShowRestrictions]=useState(false)
+ const [restrictionsOpacity,setRestrictionsOpacity]=useState(70)
+ const [restrictionsError,setRestrictionsError]=useState(false)
  const [drawingMode,setDrawingMode]=useState(false)
  const [points,setPoints]=useState(0)
  const [name,setName]=useState('Zone 1')
@@ -49,7 +53,7 @@ export function ZoneMap({affaireId,zones,onSaved,canEdit}:Props){
    if(!liveLine.current)liveLine.current=L.polyline([last,evt.latlng],{color:'#45e7de',weight:2,dashArray:'4 6',interactive:false}).addTo(m)
    else liveLine.current.setLatLngs([last,evt.latlng])
   })
-  return()=>{m.remove();map.current=null;group.current=null;draft.current=null;vertexLayer.current=null;liveLine.current=null;searchMarker.current=null}
+  return()=>{m.remove();map.current=null;group.current=null;draft.current=null;vertexLayer.current=null;liveLine.current=null;searchMarker.current=null;restrictionLayer.current=null}
  },[])
  useEffect(()=>{
   if(!map.current)return
@@ -68,6 +72,28 @@ export function ZoneMap({affaireId,zones,onSaved,canEdit}:Props){
   } else if(parcelLayer.current){parcelLayer.current.remove();parcelLayer.current=null}
   return()=>{parcelLayer.current?.remove();parcelLayer.current=null}
  },[showParcels])
+ useEffect(()=>{
+  const m=map.current
+  if(!m)return
+  restrictionLayer.current?.remove()
+  restrictionLayer.current=null
+  if(!showRestrictions){setRestrictionsError(false);return}
+  setRestrictionsError(false)
+  // DGAC / IGN: category Open and model flying, edition 2026-06. Not a professional flight authorization.
+  const overlay=L.tileLayer.wms('https://data.geopf.fr/wms-r/wms',{
+   layers:'TRANSPORTS.DRONES.RESTRICTIONS',
+   format:'image/png',
+   transparent:true,
+   version:'1.3.0',
+   opacity:restrictionsOpacity/100,
+   attribution:'Restrictions UAS catégorie Ouverte © DGAC / IGN',
+   maxZoom:19
+  })
+  overlay.on('tileerror',()=>setRestrictionsError(true))
+  overlay.addTo(m)
+  restrictionLayer.current=overlay
+  return()=>{overlay.off();overlay.remove();if(restrictionLayer.current===overlay)restrictionLayer.current=null}
+ },[showRestrictions,restrictionsOpacity])
  useEffect(()=>{
   if(!group.current)return
   group.current.clearLayers()
@@ -112,7 +138,7 @@ export function ZoneMap({affaireId,zones,onSaved,canEdit}:Props){
   <div className="panel-head"><h3>Carte et emprises</h3><span className="hint">Dessin simplifié de polygones · EPSG:4326</span></div>
   <form className="map-search" onSubmit={searchPlace}><input aria-label="Rechercher une adresse ou une commune" value={query} onChange={e=>setQuery(e.target.value)} placeholder="Rechercher une adresse, commune, lieu-dit…"/><button type="submit" disabled={searching}>{searching?'Recherche…':'Rechercher'}</button></form>
   {places.length>0&&<div className="map-search-results" role="listbox" aria-label="Résultats de recherche">{places.map((p,i)=><button type="button" key={`${p.lng}-${p.lat}-${i}`} className="ghost" onClick={()=>goToPlace(p)}>{p.label}</button>)}</div>}
-  <div className="map-toolbar"><select aria-label="Fond cartographique" value={base} onChange={e=>setBase(e.target.value as typeof base)}><option value="osm">Plan OpenStreetMap</option><option value="ortho">Orthophoto IGN</option></select><label className="parcel-toggle"><input type="checkbox" checked={showParcels} onChange={e=>setShowParcels(e.target.checked)}/> Contours cadastraux</label>
+  <div className="map-toolbar"><select aria-label="Fond cartographique" value={base} onChange={e=>setBase(e.target.value as typeof base)}><option value="osm">Plan OpenStreetMap</option><option value="ortho">Orthophoto IGN</option></select><label className="parcel-toggle"><input type="checkbox" checked={showParcels} onChange={e=>setShowParcels(e.target.checked)}/> Contours cadastraux</label><label className="parcel-toggle"><input type="checkbox" checked={showRestrictions} onChange={e=>setShowRestrictions(e.target.checked)}/> Restrictions UAS (DGAC)</label>
     {canEdit&&<><input aria-label="Nom de zone" value={name} onChange={e=>setName(e.target.value)} placeholder="Nom de zone"/>
     <select aria-label="Type de levé" value={tech} onChange={e=>setTech(e.target.value as typeof tech)}><option value="lidar">LiDAR</option><option value="photogrammetrie">Photogrammétrie</option></select>
     <label className="file-import">Importer KML<input type="file" accept=".kml,application/vnd.google-earth.kml+xml" disabled={busy} onChange={e=>{const file=e.target.files?.[0];if(file)void importKmlFile(file);e.target.value=""}}/></label>
@@ -120,6 +146,7 @@ export function ZoneMap({affaireId,zones,onSaved,canEdit}:Props){
     <button className="ghost" disabled={!points} onClick={undoPoint}>Retirer dernier point</button>
     <button disabled={points<3} onClick={save}>Enregistrer ({points} points)</button><button className="ghost" onClick={reset}>Annuler</button></>}
   </div>
+  {showRestrictions&&<div className="uas-panel"><div className="uas-panel-top"><strong>Restrictions UAS — catégorie Ouverte</strong><label>Opacité <input type="range" min="20" max="100" step="10" value={restrictionsOpacity} onChange={e=>setRestrictionsOpacity(Number(e.target.value))}/><span>{restrictionsOpacity}%</span></label></div><p>Couche DGAC / IGN, édition juin 2026. La couleur indique une restriction ou un plafond applicable selon la zone : elle ne constitue pas une autorisation de vol professionnel.</p>{restrictionsError&&<p className="uas-error">Le chargement de la couche a rencontré une erreur. Ne conclus pas à l'absence de restriction.</p>}<div className="uas-links"><a href="https://www.geoportail.gouv.fr/donnees/restrictions-uas-categorie-ouverte-et-aeromodelisme" target="_blank" rel="noopener noreferrer">Carte DGAC et légende officielle</a><a href="https://www.sia.aviation-civile.gouv.fr/produits-numeriques-en-libre-disposition/donnees-zones-geographiques-uas.html" target="_blank" rel="noopener noreferrer">Zones géographiques UAS — SIA</a></div></div>}
   {drawingMode&&<p className="hint map-drawing-hint">Mode dessin actif : clique pour placer chaque sommet ({points} point{points>1?'s':''}). Utilise « Retirer dernier point » pour corriger.</p>}
   <div ref={host} className="map-canvas"/>
   {message&&<p className="hint">{message}</p>}
