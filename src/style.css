@@ -279,3 +279,12 @@
 .quote-km-admin label{min-width:0}
 .quote-km-admin .hint{grid-column:1/-1;margin:0}
 @media(max-width:700px){.quote-km-admin{grid-template-columns:1fr}}
+
+/* Shared Illiwap branding library (Supabase Storage). */
+.illiwap-shared{margin:19px 0 0;padding:16px;border:1px solid #407281;border-radius:12px;background:#153a49}
+.illiwap-shared h4{font-size:14px;margin:0 0 7px;color:#e4f7f9}
+.illiwap-shared p{margin:7px 0 13px}
+.illiwap-shared-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.illiwap-shared-grid label{display:grid;gap:8px;color:#cbe9ed;font-size:12px;min-width:0}
+.illiwap-shared-grid input[type=file]{font-size:11px;min-width:0;padding:9px}
+@media(max-width:700px){.illiwap-shared-grid{grid-template-columns:1fr}}
