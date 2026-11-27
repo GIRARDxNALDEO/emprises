@@ -7,7 +7,8 @@ import {exportProjectedDxf} from './lib/dxfProjected'
 import {printPrefecture} from './lib/prefecture'
 import type {User} from '@supabase/supabase-js'
 type Organization={id:string,name:string}
-type Affaire={id:string,reference:string,title:string,commune:string,client:string,status:string,organization_id:string}
+type Affaire={id:string,reference:string,title:string,commune:string,client:string,status:string,organization_id:string,selected_aircraft_id?:string|null}
+type Aircraft={id:string,organization_id:string,registration:string,model:string}
 export default function App(){
  const [user,setUser]=useState<User|null>(null)
  const [email,setEmail]=useState('')
@@ -26,32 +27,18 @@ export default function App(){
  const [title,setTitle]=useState('')
  const [client,setClient]=useState('')
  const [commune,setCommune]=useState('')
- const [view,setView]=useState<'active'|'archive'|'trash'>('active')
+ const [view,setView]=useState<'active'|'archive'|'trash'|'requests'>('active')
+ const [adminOrgIds,setAdminOrgIds]=useState<string[]>([])
+ const [requests,setRequests]=useState<Affaire[]>([])
+ const [catalog,setCatalog]=useState<Aircraft[]>([])
+ const [approvalChoices,setApprovalChoices]=useState<Record<string,string>>({})
+ const [approvalBusy,setApprovalBusy]=useState(false)
  const [flightStart,setFlightStart]=useState('')
  const [flightEnd,setFlightEnd]=useState('')
  const [drone,setDrone]=useState('')
  const [notes,setNotes]=useState('')
  const [template,setTemplate]=useState('RHOTOR SOLUTIONS')
- const aircraft={
-  'RHOTOR SOLUTIONS':[
-   {uas:'UAS-FR-372350',model:'DJI Avata'},
-   {uas:'UAS-FR-307814',model:'DJI Matrice 300 RTK'},
-   {uas:'UAS-FR-302496',model:'DJI Mavic 2 Pro'},
-   {uas:'UAS-FR-477723',model:'DJI Mavic 3 Pro'},
-   {uas:'UAS-FR-355706',model:'DJI Mavic 3E'},
-   {uas:'UAS-FR-377968',model:'flying eye Mavic 3 Pro Flysafe'}
-  ],
-  'NALDEO':[
-   {uas:'UAS-FR-307814',model:'DJI Matrice 300 RTK'},
-   {uas:'UAS-FR-477723',model:'DJI Mavic 3 Pro'},
-   {uas:'UAS-FR-399722',model:'DJI Mavic 3T'},
-   {uas:'UAS-FR-305622',model:'DJI Phantom 4 RTK'},
-   {uas:'UAS-FR-377968',model:'flying eye Mavic 3 Pro Flysafe'}
-  ],
-  'Neutre':[]
- } as const
- const aircraftList=aircraft[template as keyof typeof aircraft]??aircraft['RHOTOR SOLUTIONS']
- const selectedAircraft=aircraftList.find(x=>x.uas===drone)
+ const selectedAircraft=catalog.find(x=>x.id===selected?.selected_aircraft_id)
  const operatorEmail=template==='NALDEO'?'baptiste.girard@naldeo.com':'rhotor.survey@gmail.com'
  const [estimate,setEstimate]=useState<{total_ht:number,gcp_count:number,surface_ha:number}|null>(null)
  const [currentMission,setCurrentMission]=useState<string>('')
@@ -60,6 +47,7 @@ export default function App(){
  const accountIsNaldeo=(user?.email??'').toLowerCase().endsWith('@naldeo.com')
  const chosenOrgNaldeo=orgs.some(o=>o.id===org&&o.name.toUpperCase().includes('NALDEO'))
  const naldeoTheme=accountIsNaldeo||chosenOrgNaldeo
+ const isAnyAdmin=adminOrgIds.length>0
  useEffect(()=>{
   if(!supabase)return
   supabase.auth.getUser().then(({data})=>setUser(data.user))
@@ -75,7 +63,7 @@ export default function App(){
  },[user])
  const loadAffaires=useCallback(async()=>{
   if(!supabase||!org)return
-  const {data,error}=await supabase.from('affaires').select('id,reference,title,commune,client,status,organization_id').eq('organization_id',org).order('created_at',{ascending:false})
+  const {data,error}=await supabase.from('affaires').select('id,reference,title,commune,client,status,organization_id,selected_aircraft_id').eq('organization_id',org).order('created_at',{ascending:false})
   if(error){setMessage(error.message);return}
   setAffaires(data??[])
  },[org])
