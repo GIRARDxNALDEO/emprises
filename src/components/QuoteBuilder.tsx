@@ -15,11 +15,6 @@ const formatEur=(n:number)=>n.toLocaleString('fr-FR',{style:'currency',currency:
 const esc=(s:string)=>s.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]??c))
 const formatDate=(s:string)=>new Date(s+'T12:00:00').toLocaleDateString('fr-FR')
 const cents=(n:number)=>Math.round((n+Number.EPSILON)*100)/100
-// CGI annexe IV, barème 2026 véhicule thermique/hybride 4 CV.
-export function fiscal4CV(annualKm:number){
- const d=Math.max(0,annualKm)
- return d<=5000?d*0.606:d<=20000?d*0.340+1330:d*0.407
-}
 const isPoint=(a:unknown):a is number[]=>Array.isArray(a)&&a.length>=2&&typeof a[0]==='number'&&typeof a[1]==='number'&&Number.isFinite(a[0])&&Number.isFinite(a[1])
 function centerOfZones(zones:ZoneJson[]):Point|null{
  const points:number[][]=[]
@@ -59,10 +54,10 @@ async function routeKm(start:Point,end:Point):Promise<number>{
  return value
 }
 const today=()=>new Date().toLocaleDateString('en-CA')
-export function QuoteBuilder({affaire,zones,company,estimateRevision}:{affaire:Affaire,zones:ZoneJson[],company:Company,estimateRevision:number}){
+export function QuoteBuilder({affaire,zones,company,estimateRevision,companyOrgIds}:{affaire:Affaire,zones:ZoneJson[],company:Company,estimateRevision:number,companyOrgIds:Record<Company,string>}){
  const [selectedCompany,setSelectedCompany]=useState<Company>(company)
  const [distance,setDistance]=useState('')
- const [originKm,setOriginKm]=useState('0')
+ const [kmRates,setKmRates]=useState<Record<Company,number>>({RHOTOR:0.55,NALDEO:0.55})
  const [trips,setTrips]=useState('1')
  const [includeTravel,setIncludeTravel]=useState(true)
  const [tripSource,setTripSource]=useState<'manual'|'ign'|null>(null)
@@ -84,6 +79,8 @@ export function QuoteBuilder({affaire,zones,company,estimateRevision}:{affaire:A
  const [extraRate,setExtraRate]=useState('')
  const [printError,setPrintError]=useState('')
  const point=useMemo(()=>centerOfZones(zones),[zones])
+ const kmRate=kmRates[selectedCompany]
+ useEffect(()=>{if(!supabase)return;supabase.from('app_settings').select('organization_id,setting_value').eq('setting_key','km_rate_eur').then(({data})=>{if(!data)return;setKmRates(prev=>{const next={...prev};for(const item of data){const value=Number(item.setting_value);if(!Number.isFinite(value)||value<0)continue;if(item.organization_id===companyOrgIds.RHOTOR)next.RHOTOR=value;if(item.organization_id===companyOrgIds.NALDEO)next.NALDEO=value}return next})})},[companyOrgIds.RHOTOR,companyOrgIds.NALDEO])
  useEffect(()=>{setSelectedCompany(company);setDistance('');setTripSource(null);setLogo('')},[company,affaire.id])
  const fetchEstimate=useCallback(async()=>{
   if(!supabase)return
@@ -119,11 +116,9 @@ export function QuoteBuilder({affaire,zones,company,estimateRevision}:{affaire:A
  }
  const kmOneWay=Number(distance)
  const tripCount=Number(trips)
- const beforeKm=Number(originKm)
- const validTravel=Number.isFinite(kmOneWay)&&kmOneWay>0&&Number.isFinite(tripCount)&&Number.isInteger(tripCount)&&tripCount>0&&tripCount<=365&&Number.isFinite(beforeKm)&&beforeKm>=0
+ const validTravel=Number.isFinite(kmOneWay)&&kmOneWay>0&&Number.isFinite(tripCount)&&Number.isInteger(tripCount)&&tripCount>0&&tripCount<=365
  const totalKm=validTravel?cents(kmOneWay*2*tripCount):0
- const mileageCost=validTravel?cents(fiscal4CV(beforeKm+totalKm)-fiscal4CV(beforeKm)):0
- const mileageRate=totalKm?mileageCost/totalKm:0
+ const mileageCost=validTravel?cents(totalKm*kmRate):0
  const baseTotal=estimates?cents(estimates.lines.reduce((sum,l)=>sum+Number(l.total_ht),0)):0
  const extraTotal=cents(additional.reduce((sum,l)=>sum+l.total_ht,0))
  const totalHT=cents(baseTotal+extraTotal+(includeTravel?mileageCost:0))
@@ -136,7 +131,7 @@ export function QuoteBuilder({affaire,zones,company,estimateRevision}:{affaire:A
  }
  function print(){
   if(!estimates){setPrintError('Crée d’abord un chiffrage serveur pour inclure les postes calculés du dossier.');return}
-  if(includeTravel&&!validTravel){setPrintError('Complète le kilométrage aller, le nombre d’allers-retours et le cumul annuel, ou désactive les déplacements.');return}
+  if(includeTravel&&!validTravel){setPrintError('Complète la distance aller et le nombre d’allers-retours, ou désactive les déplacements.');return}
   if(selectedCompany==='NALDEO'&&!logo){setPrintError('Importe le logo officiel NALDEO pour respecter la charte.');return}
   if(!issuerSiret.trim()){setPrintError('Renseigne le numéro SIRET de la société émettrice.');return}
   if(!clientAddress.trim()){setPrintError('Renseigne l’adresse de facturation du client.');return}
@@ -146,8 +141,8 @@ export function QuoteBuilder({affaire,zones,company,estimateRevision}:{affaire:A
   const name=selectedCompany==='NALDEO'?'NALDEO':'RHOTOR'
   const logoUrl=selectedCompany==='RHOTOR'&&!logo?new URL(`${import.meta.env.BASE_URL}rhotor-logo.png`,window.location.origin).href:logo
   const lines=showLines.map(l=>`<tr><td>${esc(l.label)}</td><td class="right">${Number(l.quantity).toLocaleString('fr-FR',{maximumFractionDigits:3})}</td><td>${esc(l.unit)}</td><td class="right">${formatEur(Number(l.unit_price))}</td><td class="right">${formatEur(Number(l.total_ht))}</td></tr>`).join('')
-  const kmRow=includeTravel?`<tr><td>Déplacements routiers : ${esc(addresses[selectedCompany])} ↔ ${esc(affaire.commune||'site mission')} (${tripCount} aller-retour(s), ${kmOneWay.toLocaleString('fr-FR',{maximumFractionDigits:1})} km aller)</td><td class="right">${totalKm.toLocaleString('fr-FR',{maximumFractionDigits:1})}</td><td>km</td><td class="right">${formatEur(mileageRate)}/km*</td><td class="right">${formatEur(mileageCost)}</td></tr>`:''
-  const disclaimer=includeTravel?`<div class="note">* Déplacement valorisé par référence au barème fiscal 2026 pour véhicule 4 CV : kilométrage professionnel antérieur déclaré de ${beforeKm.toLocaleString('fr-FR')} km ; coût additionnel sur ${totalKm.toLocaleString('fr-FR')} km. Valeur de référence commerciale, non une indemnité fiscale directement facturée. Distance ${tripSource==='ign'?'estimée par le calcul d’itinéraire IGN et à confirmer':'saisie manuellement'}. Péages et stationnement non inclus.</div>`:''
+  const kmRow=includeTravel?`<tr><td>Déplacements routiers : ${esc(addresses[selectedCompany])} ↔ ${esc(affaire.commune||'site mission')} (${tripCount} aller-retour(s), ${kmOneWay.toLocaleString('fr-FR',{maximumFractionDigits:1})} km aller)</td><td class="right">${totalKm.toLocaleString('fr-FR',{maximumFractionDigits:1})}</td><td>km</td><td class="right">${formatEur(kmRate)}/km</td><td class="right">${formatEur(mileageCost)}</td></tr>`:''
+  const disclaimer=includeTravel?`<div class="note">Déplacements facturés au tarif commercial de ${formatEur(kmRate)}/km, selon le barème administrateur. Distance ${tripSource==='ign'?'estimée via IGN et à confirmer':'saisie manuellement'}. Péages et stationnement non inclus. Ce tarif est distinct du barème fiscal officiel.</div>`:''
   const html=`<!doctype html><html lang="fr"><head><meta charset="UTF-8"/><title>Devis ${esc(affaire.reference)} — ${name}</title><style>
   @page{size:A4 portrait;margin:0}*{box-sizing:border-box}body{margin:0;background:#eaf1f4;font:11px Arial,Helvetica,sans-serif;color:#1b3644;-webkit-print-color-adjust:exact;print-color-adjust:exact}
   .printbar{max-width:210mm;margin:auto;display:flex;align-items:center;justify-content:space-between;padding:12px 18px;background:#e6f3f3}.printbar button{background:#0e8a90;color:white;border:0;border-radius:6px;padding:11px 14px;cursor:pointer;font-weight:bold}
@@ -179,7 +174,7 @@ export function QuoteBuilder({affaire,zones,company,estimateRevision}:{affaire:A
   if(!w)setPrintError('Le navigateur a bloqué la prévisualisation. Autorise les fenêtres pop-up pour EMPRISES.')
   setTimeout(()=>URL.revokeObjectURL(url),180000)
  }
- return <section className="panel quote-builder"><div className="panel-head"><div><h3><FileText size={18}/> Générateur de devis PDF</h3><p className="hint">Devis A4 avec en-tête de la société, lignes de chiffrage enregistrées et déplacements en véhicule 4 CV.</p></div><button className="ghost" disabled={loadingEstimate} onClick={()=>void fetchEstimate()}><RefreshCw size={15}/> Recharger le chiffrage</button></div>
+ return <section className="panel quote-builder"><div className="panel-head"><div><h3><FileText size={18}/> Générateur de devis PDF</h3><p className="hint">Devis A4 avec en-tête de la société, lignes de chiffrage enregistrées et déplacements au tarif administrateur.</p></div><button className="ghost" disabled={loadingEstimate} onClick={()=>void fetchEstimate()}><RefreshCw size={15}/> Recharger le chiffrage</button></div>
  <div className="quote-figures"><div><span>Prestations HT</span><strong>{formatEur(baseTotal)}</strong></div><div><span>Déplacements HT</span><strong>{includeTravel&&validTravel?formatEur(mileageCost):'—'}</strong></div><div className="quote-total"><span>Total devis HT</span><strong>{formatEur(totalHT)}</strong></div></div>
  {loadingEstimate?<p className="hint">Lecture des lignes de chiffrage…</p>:estimateError?<p className="quote-alert">{estimateError}</p>:!estimates?<p className="quote-alert">Aucun chiffrage serveur disponible. Clique sur « Créer le chiffrage » ci-dessus, puis recharge les lignes.</p>:<p className="hint">Chiffrage du {new Date(estimates.estimate.created_at).toLocaleDateString('fr-FR')} · {estimates.lines.length} poste(s) enregistrés · le devis réutilise exactement ces lignes.</p>}
  <div className="quote-section"><h4><CarFront size={17}/> Déplacements et indemnités kilométriques</h4>
@@ -189,9 +184,8 @@ export function QuoteBuilder({affaire,zones,company,estimateRevision}:{affaire:A
  {routeError&&<p className="quote-alert">{routeError}</p>}
  <div className="quote-grid quote-km"><label>Distance aller (km)<input type="number" min="0" step="0.1" value={distance} onChange={e=>{setDistance(e.target.value);setTripSource('manual')}} placeholder="Ex. 37,5"/></label>
  <label>Nombre d'allers-retours<input type="number" min="1" step="1" max="365" value={trips} onChange={e=>setTrips(e.target.value)}/></label>
- <label>Kilométrage professionnel cumulé avant ce trajet (km)<input type="number" min="0" step="1" value={originKm} onChange={e=>setOriginKm(e.target.value)}/></label>
  <label className="quote-checkbox"><input type="checkbox" checked={includeTravel} onChange={e=>setIncludeTravel(e.target.checked)}/> Ajouter les déplacements au devis</label></div>
- <p className="hint">Barème fiscal automobile 2026, 4 CV thermique/hybride : jusqu'à 5 000 km/an : 0,606 × d ; de 5 001 à 20 000 km : 0,340 × d + 1 330 ; au-delà : 0,407 × d. Calcul sur l'accroissement du kilométrage annuel déclaré. Le tarif commercial est présenté par référence à ce barème, pas comme une exonération fiscale automatique.</p>
+ <p className="hint">Tarif kilométrique commercial fixé dans les barèmes administrateur : {formatEur(kmRate)}/km. Calcul : distance aller × 2 × nombre d'allers-retours × tarif. Ce prix ne correspond pas au barème fiscal officiel.</p>
  <div className="quote-trip-result"><span>Distance AR × déplacements : <b>{totalKm.toLocaleString('fr-FR',{maximumFractionDigits:1})} km</b></span><span>Montant de déplacement : <b>{validTravel?formatEur(mileageCost):'À calculer'}</b></span></div></div>
  <div className="quote-section"><h4><Calculator size={17}/> Postes complémentaires</h4><div className="quote-grid quote-extras"><label>Désignation<input value={extraLabel} onChange={e=>setExtraLabel(e.target.value)} placeholder="Ex. Coordination de mission"/></label><label>Quantité<input type="number" min="0.01" step="0.01" value={extraQty} onChange={e=>setExtraQty(e.target.value)}/></label><label>Prix unitaire HT (€)<input type="number" min="0" step="0.01" value={extraRate} onChange={e=>setExtraRate(e.target.value)}/></label><button type="button" onClick={addLine}>Ajouter un poste</button></div>
  {additional.map(l=><div className="quote-extra-row" key={l.id}><span>{l.label} · {l.quantity} × {formatEur(l.unit_price)}</span><strong>{formatEur(l.total_ht)}</strong><button className="ghost" onClick={()=>setAdditional(x=>x.filter(y=>y.id!==l.id))}>Retirer</button></div>)}</div>
