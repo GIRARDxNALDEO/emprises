@@ -7,7 +7,7 @@ import {exportProjectedDxf} from './lib/dxfProjected'
 import {printPrefecture} from './lib/prefecture'
 import type {User} from '@supabase/supabase-js'
 type Organization={id:string,name:string}
-type Affaire={id:string,reference:string,title:string,commune:string,client:string,status:string,organization_id:string,selected_aircraft_id?:string|null}
+type Affaire={id:string,reference:string,title:string,commune:string,client:string,status:string,organization_id:string,selected_aircraft_id?:string|null,planned_altitude_m?:number|null,feasibility?:string,feasibility_notes?:string}
 type Aircraft={id:string,organization_id:string,registration:string,model:string}
 export default function App(){
  const [user,setUser]=useState<User|null>(null)
@@ -35,13 +35,18 @@ export default function App(){
  const [aircraftModel,setAircraftModel]=useState('')
  const [aircraftRegistration,setAircraftRegistration]=useState('')
  const [fleetBusy,setFleetBusy]=useState(false)
- const [approvalChoices,setApprovalChoices]=useState<Record<string,string>>({})
+ const [reviewAircraft,setReviewAircraft]=useState('')
+ const [reviewAltitude,setReviewAltitude]=useState('')
+ const [reviewFeasibility,setReviewFeasibility]=useState('a_verifier')
+ const [reviewNotes,setReviewNotes]=useState('')
  const [approvalBusy,setApprovalBusy]=useState(false)
  const [flightStart,setFlightStart]=useState('')
  const [flightEnd,setFlightEnd]=useState('')
  const [notes,setNotes]=useState('')
  const [template,setTemplate]=useState('RHOTOR SOLUTIONS')
  const selectedAircraft=catalog.find(x=>x.id===selected?.selected_aircraft_id)
+ const selectedIsAdmin=!!selected&&adminOrgIds.includes(selected.organization_id)
+ const selectedOrgName=orgs.find(o=>o.id===selected?.organization_id)?.name??'Organisation'
  const operatorEmail=template==='NALDEO'?'baptiste.girard@naldeo.com':'rhotor.survey@gmail.com'
  const [estimate,setEstimate]=useState<{total_ht:number,gcp_count:number,surface_ha:number}|null>(null)
  const [currentMission,setCurrentMission]=useState<string>('')
@@ -51,6 +56,7 @@ export default function App(){
  const chosenOrgNaldeo=orgs.some(o=>o.id===org&&o.name.toUpperCase().includes('NALDEO'))
  const naldeoTheme=accountIsNaldeo||chosenOrgNaldeo
  const isAnyAdmin=adminOrgIds.length>0
+ const effectiveOrg=selected?.organization_id??org
  useEffect(()=>{
   if(!supabase)return
   supabase.auth.getUser().then(({data})=>setUser(data.user))
@@ -66,7 +72,7 @@ export default function App(){
  },[user])
  const loadAffaires=useCallback(async()=>{
   if(!supabase||!org)return
-  const {data,error}=await supabase.from('affaires').select('id,reference,title,commune,client,status,organization_id,selected_aircraft_id').eq('organization_id',org).order('created_at',{ascending:false})
+  const {data,error}=await supabase.from('affaires').select('id,reference,title,commune,client,status,organization_id,selected_aircraft_id,planned_altitude_m,feasibility,feasibility_notes,planned_altitude_m,feasibility,feasibility_notes').eq('organization_id',org).order('created_at',{ascending:false})
   if(error){setMessage(error.message);return}
   setAffaires(data??[])
  },[org])
@@ -78,8 +84,22 @@ export default function App(){
  useEffect(()=>{setFleetOrg(prev=>adminOrgIds.includes(prev)?prev:(adminOrgIds[0]??''))},[adminOrgIds])
  async function addAircraft(e:React.FormEvent){e.preventDefault();if(!supabase||!adminOrgIds.includes(fleetOrg))return;setFleetBusy(true);const {error}=await supabase.rpc('admin_save_aircraft',{p_org:fleetOrg,p_registration:aircraftRegistration.trim(),p_model:aircraftModel.trim()});setFleetBusy(false);if(error){setMessage(error.message);return}setAircraftRegistration('');setAircraftModel('');setMessage('Aéronef ajouté au parc');await loadCatalog()}
  async function disableAircraft(aircraft:Aircraft){if(!supabase||!confirm('Désactiver cet aéronef pour les prochaines missions ?'))return;const {error}=await supabase.rpc('admin_set_aircraft_active',{p_aircraft:aircraft.id,p_active:false});if(error){setMessage(error.message);return}setMessage('Aéronef désactivé');await loadCatalog()}
- async function submitRequest(){if(!supabase||!selected)return;const {error}=await supabase.rpc('submit_affaire_request',{p_affaire:selected.id});if(error){setMessage(error.message);return}setMessage('Demande transmise à l’administrateur');setSelected({...selected,status:'a_chiffrer'});await Promise.all([loadAffaires(),loadRequests()])}
- async function approveRequest(request:Affaire){if(!supabase)return;const selectedId=approvalChoices[request.id];if(!selectedId){setMessage('Sélectionne un aéronef avant de valider.');return}setApprovalBusy(true);const {error}=await supabase.rpc('admin_validate_affaire',{p_affaire:request.id,p_aircraft:selectedId});setApprovalBusy(false);if(error){setMessage(error.message);return}setMessage('Demande validée — aéronef attribué');await Promise.all([loadRequests(),loadAffaires()])}
+ async function submitRequest(){if(!supabase||!selected||selectedIsAdmin)return;const {error}=await supabase.rpc('submit_affaire_request',{p_affaire:selected.id});if(error){setMessage(error.message);return}setMessage('Demande transmise à l’administrateur');setSelected({...selected,status:'a_chiffrer'});await Promise.all([loadAffaires(),loadRequests()])}
+ async function saveTechnicalReview(approve:boolean){if(!supabase||!selected||!selectedIsAdmin)return
+  const altitude=reviewAltitude.trim()?Number(reviewAltitude):null
+  if(altitude!==null&&(!Number.isFinite(altitude)||altitude<=0||altitude>1000)){setMessage('Altitude invalide : saisis une valeur entre 0 et 1 000 m.');return}
+  if(approve&&(!reviewAircraft||!altitude||reviewFeasibility!=='faisable')){setMessage('Pour valider : sélectionne un aéronef, précise une altitude et indique « Faisable ».');return}
+  setApprovalBusy(true)
+  const {error}=await supabase.rpc('admin_review_affaire',{p_affaire:selected.id,p_aircraft:reviewAircraft||null,p_altitude_m:altitude,p_feasibility:reviewFeasibility,p_notes:reviewNotes,p_approve:approve})
+  setApprovalBusy(false)
+  if(error){setMessage(error.message);return}
+  const updated={...selected,selected_aircraft_id:reviewAircraft||null,planned_altitude_m:altitude,feasibility:reviewFeasibility,feasibility_notes:reviewNotes,status:approve?'a_preparer':selected.status}
+  setSelected(updated)
+  setMessage(approve?'Mission validée — aéronef et altitude enregistrés.':'Analyse technique enregistrée.')
+  await Promise.all([loadRequests(),loadAffaires()])
+ }
+ function openAdminRequest(request:Affaire){setView('requests');setOrg(request.organization_id);setSelected(request);setMessage('')}
+
  const loadZones=useCallback(async()=>{
   if(!supabase||!selected)return
   const {data,error}=await supabase.rpc('get_affaire_zones_geojson',{p_affaire:selected.id})
@@ -87,8 +107,9 @@ export default function App(){
   setZones((data??[]) as ZoneJson[])
  },[selected])
  useEffect(()=>{void loadOrgs()},[loadOrgs])
- useEffect(()=>{void loadAffaires();setSelected(null)},[loadAffaires])
+ useEffect(()=>{void loadAffaires()},[loadAffaires])
  useEffect(()=>{void loadZones();setCurrentMission('');setEstimate(null);setTab('map')},[loadZones])
+ useEffect(()=>{setZones([]);setReviewAircraft(selected?.selected_aircraft_id??'');setReviewAltitude(selected?.planned_altitude_m==null?'':String(selected.planned_altitude_m));setReviewFeasibility(selected?.feasibility??'a_verifier');setReviewNotes(selected?.feasibility_notes??'')},[selected?.id])
  useEffect(()=>{if(!supabase||!org)return;supabase.from('pricing_rules').select('*').eq('organization_id',org).eq('active',true).maybeSingle().then(({data})=>{if(data)setPricing({gcp:String(data.gcp_per_ha),minimum:String(data.min_gcp_per_mission),lidar:String(data.lidar_eur_ha),photo:String(data.photogrammetrie_eur_ha),gcpprice:String(data.gcp_eur_unit),mob:String(data.amene_repli_eur),setup:String(data.setup_eur),processing:String(data.processing_eur_ha)})})},[org])
  useEffect(()=>{
   if(!supabase||!org||!user)return
