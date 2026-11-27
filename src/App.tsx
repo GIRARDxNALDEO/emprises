@@ -55,7 +55,6 @@ export default function App(){
  const prefectureBrand=selectedIsAdmin?template:missionBrand
  const prefecturePhone=prefectureBrand==='NALDEO'?'07.64.50.10.25':'06.15.04.46.21'
  const prefectureEmail=prefectureBrand==='NALDEO'?'baptiste.girard@naldeo.com':'rhotor.survey@gmail.com'
- const operatorEmail=template==='NALDEO'?'baptiste.girard@naldeo.com':'rhotor.survey@gmail.com'
  const [estimate,setEstimate]=useState<{total_ht:number,gcp_count:number,surface_ha:number}|null>(null)
  const [estimateRevision,setEstimateRevision]=useState(0)
  const [currentMission,setCurrentMission]=useState<string>('')
