@@ -9,7 +9,7 @@ export function ZoneMap({affaireId,zones,onSaved,canEdit}:Props){
  const host=useRef<HTMLDivElement|null>(null)
  const map=useRef<L.Map|null>(null)
  const drawing=useRef<L.LatLng[]>([])
- const draft=useRef<L.Polyline|null>(null)
+ const draft=useRef<L.Polyline|L.Polygon|null>(null)
  const vertexLayer=useRef<L.LayerGroup|null>(null)
  const liveLine=useRef<L.Polyline|null>(null)
  const searchMarker=useRef<L.CircleMarker|null>(null)
@@ -41,7 +41,7 @@ export function ZoneMap({affaireId,zones,onSaved,canEdit}:Props){
    if(draft.current)draft.current.remove()
    draft.current=L.polyline(drawing.current,{color:'#22c7c1',weight:3,dashArray:'7 5'}).addTo(m)
    L.circleMarker(evt.latlng,{radius:7,color:'#07363a',weight:2,fillColor:'#37e2d5',fillOpacity:1,interactive:false}).addTo(vertexLayer.current!)
-   if(drawing.current.length>=3){draft.current.remove();draft.current=L.polygon(drawing.current,{color:'#22c7c1',weight:3,fillColor:'#22c7c1',fillOpacity:.17,dashArray:'7 5',interactive:false}).addTo(m) as L.Polyline}
+   if(drawing.current.length>=3){draft.current.remove();draft.current=L.polygon(drawing.current,{color:'#22c7c1',weight:3,fillColor:'#22c7c1',fillOpacity:.17,dashArray:'7 5',interactive:false}).addTo(m)}
   })
   m.on('mousemove',(evt:L.LeafletMouseEvent)=>{
    if(!active.current||!drawing.current.length)return
@@ -98,7 +98,7 @@ export function ZoneMap({affaireId,zones,onSaved,canEdit}:Props){
   finally{setBusy(false)}
  }
  function reset(){drawing.current=[];draft.current?.remove();draft.current=null;liveLine.current?.remove();liveLine.current=null;vertexLayer.current?.clearLayers();setPoints(0);setDrawingMode(false)}
- function undoPoint(){if(!drawing.current.length)return;drawing.current.pop();draft.current?.remove();draft.current=null;liveLine.current?.remove();liveLine.current=null;vertexLayer.current?.clearLayers();const m=map.current;if(m){drawing.current.forEach(p=>L.circleMarker(p,{radius:7,color:'#07363a',weight:2,fillColor:'#37e2d5',fillOpacity:1,interactive:false}).addTo(vertexLayer.current!));if(drawing.current.length)draft.current=(drawing.current.length>=3?L.polygon(drawing.current,{color:'#22c7c1',weight:3,fillColor:'#22c7c1',fillOpacity:.17,dashArray:'7 5',interactive:false}):L.polyline(drawing.current,{color:'#22c7c1',weight:3,dashArray:'7 5',interactive:false})).addTo(m) as L.Polyline}setPoints(drawing.current.length)}
+ function undoPoint(){if(!drawing.current.length)return;drawing.current.pop();draft.current?.remove();draft.current=null;liveLine.current?.remove();liveLine.current=null;vertexLayer.current?.clearLayers();const m=map.current;if(m){drawing.current.forEach(p=>L.circleMarker(p,{radius:7,color:'#07363a',weight:2,fillColor:'#37e2d5',fillOpacity:1,interactive:false}).addTo(vertexLayer.current!));if(drawing.current.length)draft.current=(drawing.current.length>=3?L.polygon(drawing.current,{color:'#22c7c1',weight:3,fillColor:'#22c7c1',fillOpacity:.17,dashArray:'7 5',interactive:false}):L.polyline(drawing.current,{color:'#22c7c1',weight:3,dashArray:'7 5',interactive:false})).addTo(m)}setPoints(drawing.current.length)}
  async function searchPlace(e:React.FormEvent){e.preventDefault();const value=query.trim();if(value.length<2){setMessage('Saisis au moins 2 caractères pour chercher une adresse ou une commune.');return}setSearching(true);setPlaces([]);try{const response=await fetch(`https://data.geopf.fr/geocodage/search?q=${encodeURIComponent(value)}&limit=6`);if(!response.ok)throw Error('Le service de recherche IGN est indisponible.');const data=await response.json() as {features?:Array<{geometry?:{coordinates?:number[]},properties?:{label?:string,name?:string}}>};const items=(data.features??[]).flatMap(f=>{const coords=f.geometry?.coordinates;return coords&&coords.length>=2?[{lng:coords[0],lat:coords[1],label:f.properties?.label??f.properties?.name??value}]:[]});setPlaces(items);if(!items.length)setMessage('Aucun lieu trouvé. Précise la commune ou le code postal.')}catch(err){setMessage(err instanceof Error?err.message:'Recherche impossible.')}finally{setSearching(false)}}
  function goToPlace(place:{label:string,lat:number,lng:number}){const m=map.current;if(!m)return;m.setView([place.lat,place.lng],Math.max(m.getZoom(),16));searchMarker.current?.remove();searchMarker.current=L.circleMarker([place.lat,place.lng],{radius:8,color:'#fff',weight:2,fillColor:'#009b98',fillOpacity:1}).addTo(m).bindPopup(place.label).openPopup();setQuery(place.label);setPlaces([])}
  async function save(){
