@@ -288,3 +288,19 @@
 .illiwap-shared-grid label{display:grid;gap:8px;color:#cbe9ed;font-size:12px;min-width:0}
 .illiwap-shared-grid input[type=file]{font-size:11px;min-width:0;padding:9px}
 @media(max-width:700px){.illiwap-shared-grid{grid-template-columns:1fr}}
+
+/* Time series: daylight solar-angle background, wind, gust and precipitation. */
+.weather-graph{margin-top:20px;padding:18px 17px 14px;border:1px solid #2f5669;background:linear-gradient(140deg,#102d3d,#0c2636);border-radius:13px}
+.weather-graph-heading{display:flex;justify-content:space-between;align-items:flex-end;gap:15px;flex-wrap:wrap;margin-bottom:12px}
+.weather-graph-heading h4{font-size:17px;letter-spacing:-.02em;margin:7px 0 0;color:#eaf6f8}
+.weather-graph-legend{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.weather-graph-legend span{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:650;color:#b4d2dc;white-space:nowrap}
+.weather-graph-legend i{display:inline-block;width:16px;height:3px;border-radius:5px}
+.weather-graph-legend .wgl-wind{background:#43ccd1}
+.weather-graph-legend .wgl-gust{background:repeating-linear-gradient(to right,#e0a37d 0 6px,transparent 6px 9px)}
+.weather-graph-legend .wgl-rain{background:#5db4f2;height:9px;width:9px;border-radius:2px}
+.weather-graph-legend .wgl-sun{background:#f7cc73}
+.weather-graph-scroll{width:100%;overflow-x:auto;scrollbar-width:thin;scrollbar-color:#487186 transparent}
+.weather-graph-svg{display:block;width:100%;min-width:650px;height:auto;max-height:350px}
+.weather-graph-foot{border-top:1px solid #294b60;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;padding-top:10px;margin-top:7px;color:#8ba9b8;font-size:10px;line-height:1.5}
+@media(max-width:700px){.weather-graph{padding:13px 10px}.weather-graph-heading h4{font-size:15px}.weather-graph-legend{gap:10px}.weather-graph-legend span{font-size:10px}}
