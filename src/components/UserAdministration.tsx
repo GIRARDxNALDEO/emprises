@@ -10,7 +10,6 @@ const roles:{value:Role,label:string}[]=[
  {value:'telepilote',label:'Télépilote'},
  {value:'admin',label:'Administrateur'}
 ]
-const roleName=(role:Role)=>roles.find(r=>r.value===role)?.label??role
 const date=(value:string|null)=>value?new Date(value).toLocaleDateString('fr-FR'):'—'
 function messageOf(error:unknown){
  return error instanceof Error?error.message:'Une erreur est survenue.'
