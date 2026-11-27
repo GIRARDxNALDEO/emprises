@@ -77,3 +77,15 @@
 .uas-panel .uas-error{font-weight:700;color:#ffb0a5}
 .uas-links{display:flex;flex-wrap:wrap;gap:9px 18px}
 .uas-links a{font-size:12px;color:#7adad8;text-decoration:underline;text-underline-offset:3px}
+
+/* Corbeille — distinct de la navigation d'une affaire active */
+.trash-panel .panel-head{align-items:flex-start;gap:16px}
+.trash-panel .panel-head h3{display:flex;align-items:center;gap:9px}
+.trash-panel .panel-head p{margin:8px 0 0}
+.trash-list{display:grid;gap:10px}
+.trash-row{display:flex;justify-content:space-between;align-items:center;gap:20px;border:1px solid #355260;background:#142c38;border-radius:12px;padding:15px 17px}
+.trash-row-info{min-width:0;overflow-wrap:anywhere}
+.trash-row-info strong{display:block;font-size:14px}
+.trash-row-info small{display:block;color:#9eb7bf;margin-top:6px}
+.trash-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;flex-shrink:0}
+@media(max-width:700px){.trash-panel .panel-head,.trash-row{flex-direction:column;align-items:stretch}.trash-actions{flex-shrink:1}.trash-actions button{flex:1}}
