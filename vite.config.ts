@@ -1,8 +1,9 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
-// GitHub Pages publishes this repository at /emprises/.
-export default defineConfig({
+// GitHub Pages publishes the compiled application below /emprises/.
+// Vite's development server remains at the root.
+export default defineConfig(({ command }) => ({
   plugins: [react()],
-  base: process.env.GITHUB_PAGES === 'true' ? '/emprises/' : '/',
-})
+  base: command === 'build' ? '/emprises/' : '/',
+}))
