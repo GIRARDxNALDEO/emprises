@@ -67,6 +67,12 @@ export default function App(){
   if(error){setMessage(error.message);return}
   setAffaires(data??[])
  },[org])
+ const loadRequests=useCallback(async()=>{if(!supabase||adminOrgIds.length===0){setRequests([]);return}const {data,error}=await supabase.from('affaires').select('id,reference,title,commune,client,status,organization_id,selected_aircraft_id').in('organization_id',adminOrgIds).eq('status','a_chiffrer').order('created_at',{ascending:false});if(error){setMessage(error.message);return}setRequests((data??[]) as Affaire[])},[adminOrgIds])
+ useEffect(()=>{if(!supabase||!user)return;supabase.from('memberships').select('organization_id,role').eq('user_id',user.id).eq('active',true).then(({data,error})=>{if(error){setMessage(error.message);return}setAdminOrgIds((data??[]).filter(m=>m.role==='admin').map(m=>m.organization_id))})},[user])
+ useEffect(()=>{void loadRequests()},[loadRequests])
+ useEffect(()=>{if(!supabase||!org)return;supabase.from('aircraft_catalog').select('id,organization_id,registration,model').eq('organization_id',org).eq('active',true).then(({data})=>setCatalog((data??[]) as Aircraft[]))},[org])
+ async function submitRequest(){if(!supabase||!selected)return;const {error}=await supabase.rpc('submit_affaire_request',{p_affaire:selected.id});if(error){setMessage(error.message);return}setMessage('Demande transmise à l’administrateur');setSelected({...selected,status:'a_chiffrer'});await Promise.all([loadAffaires(),loadRequests()])}
+ async function approveRequest(request:Affaire){if(!supabase)return;const selectedId=approvalChoices[request.id];if(!selectedId){setMessage('Sélectionne un aéronef avant de valider.');return}setApprovalBusy(true);const {error}=await supabase.rpc('admin_validate_affaire',{p_affaire:request.id,p_aircraft:selectedId});setApprovalBusy(false);if(error){setMessage(error.message);return}setMessage('Demande validée — aéronef attribué');await Promise.all([loadRequests(),loadAffaires()])}
  const loadZones=useCallback(async()=>{
   if(!supabase||!selected)return
   const {data,error}=await supabase.rpc('get_affaire_zones_geojson',{p_affaire:selected.id})
@@ -106,7 +112,7 @@ export default function App(){
   e.preventDefault();if(!supabase||!user||!org)return
   const {error}=await supabase.from('affaires').insert({organization_id:org,reference,title,client,commune,owner_id:user.id})
   if(error){setMessage(error.message);return}
-  setReference('');setTitle('');setClient('');setCommune('');setMessage('Affaire créée');await loadAffaires()
+  setReference('');setTitle('');setClient('');setCommune('');setMessage('Affaire créée en brouillon : dessine les zones puis transmets la demande.');await loadAffaires()
  }
  async function changeStatus(status:'archivee'|'supprimee'|'brouillon'){
   if(!supabase||!selected)return
