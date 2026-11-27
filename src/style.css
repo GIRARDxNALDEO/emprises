@@ -55,3 +55,14 @@
 .request-submit{border-color:#276c76;background:linear-gradient(115deg,#112e3b,#123743)}
 .request-submit h3{margin-bottom:9px}
 @media(max-width:900px){.request-card{grid-template-columns:1fr;align-items:stretch}}
+
+/* Fleet management: full inventory and controlled additions */
+.fleet-grid{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(260px,.85fr);gap:20px;align-items:start;margin-top:18px}
+.fleet-list{display:grid;gap:9px;min-width:0}
+.fleet-item{display:flex;justify-content:space-between;align-items:center;gap:16px;padding:13px 15px;background:#173340;border:1px solid #315363;border-radius:9px}
+.fleet-item strong{display:block;font-size:14px}
+.fleet-item small{display:block;margin-top:5px;color:#9bb9c1}
+.fleet-item button{flex-shrink:0;font-size:12px}
+.fleet-form{background:#142e3b;border:1px solid #345666;border-radius:13px;padding:20px}
+.fleet-form h3{margin:0 0 6px}
+@media(max-width:900px){.fleet-grid{grid-template-columns:1fr}}
