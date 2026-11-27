@@ -31,6 +31,7 @@ export default function App(){
  const [flightEnd,setFlightEnd]=useState('')
  const [drone,setDrone]=useState('')
  const [notes,setNotes]=useState('')
+ const [template,setTemplate]=useState('RHOTOR SOLUTIONS')
  const aircraft={
   'RHOTOR SOLUTIONS':[
    {uas:'UAS-FR-372350',model:'DJI Avata'},
@@ -55,7 +56,6 @@ export default function App(){
  const [estimate,setEstimate]=useState<{total_ht:number,gcp_count:number,surface_ha:number}|null>(null)
  const [currentMission,setCurrentMission]=useState<string>('')
  const [pricing,setPricing]=useState({gcp:'4',minimum:'4',lidar:'0',photo:'0',gcpprice:'0',mob:'0',setup:'0',processing:'0'})
- const [template,setTemplate]=useState('RHOTOR SOLUTIONS')
  const [tab,setTab]=useState<'map'|'pricing'|'admin'>('map')
  useEffect(()=>{
   if(!supabase)return
