@@ -8,3 +8,6 @@
 
 /* Center the RHOTOR logo without changing the login form layout. */
 .auth-box > img { display:block; margin-left:auto; margin-right:auto; }
+
+/* Login branding: center RHOTOR SOLUTIONS without affecting other eyebrow labels. */
+.auth-box > .eyebrow { display:block; width:100%; text-align:center; }
