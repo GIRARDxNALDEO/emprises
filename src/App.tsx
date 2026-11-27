@@ -71,11 +71,12 @@ export default function App(){
  },[user])
  const loadAffaires=useCallback(async()=>{
   if(!supabase||!org)return
-  const {data,error}=await supabase.from('affaires').select('id,reference,title,commune,client,status,organization_id,selected_aircraft_id,planned_altitude_m,feasibility,feasibility_notes').eq('organization_id',org).order('created_at',{ascending:false})
+  let {data,error}=await supabase.from('affaires').select('id,reference,title,commune,client,status,organization_id,selected_aircraft_id,planned_altitude_m,feasibility,feasibility_notes').eq('organization_id',org).order('created_at',{ascending:false})
+  if(error&&(/planned_altitude_m|feasibility|schema cache/i).test(error.message)){const fallback=await supabase.from('affaires').select('id,reference,title,commune,client,status,organization_id,selected_aircraft_id').eq('organization_id',org).order('created_at',{ascending:false});data=fallback.data;error=fallback.error}
   if(error){setMessage(error.message);return}
-  setAffaires(data??[])
+  setAffaires((data??[]) as Affaire[])
  },[org])
- const loadRequests=useCallback(async()=>{if(!supabase||adminOrgIds.length===0){setRequests([]);return}const {data,error}=await supabase.from('affaires').select('id,reference,title,commune,client,status,organization_id,selected_aircraft_id,planned_altitude_m,feasibility,feasibility_notes').in('organization_id',adminOrgIds).eq('status','a_chiffrer').order('created_at',{ascending:false});if(error){setMessage(error.message);return}setRequests((data??[]) as Affaire[])},[adminOrgIds])
+ const loadRequests=useCallback(async()=>{if(!supabase||adminOrgIds.length===0){setRequests([]);return}let {data,error}=await supabase.from('affaires').select('id,reference,title,commune,client,status,organization_id,selected_aircraft_id,planned_altitude_m,feasibility,feasibility_notes').in('organization_id',adminOrgIds).eq('status','a_chiffrer').order('created_at',{ascending:false});if(error&&(/planned_altitude_m|feasibility|schema cache/i).test(error.message)){const fallback=await supabase.from('affaires').select('id,reference,title,commune,client,status,organization_id,selected_aircraft_id').in('organization_id',adminOrgIds).eq('status','a_chiffrer').order('created_at',{ascending:false});data=fallback.data;error=fallback.error}if(error){setMessage(error.message);return}setRequests((data??[]) as Affaire[])},[adminOrgIds])
  useEffect(()=>{if(!supabase||!user)return;supabase.from('memberships').select('organization_id,role').eq('user_id',user.id).eq('active',true).then(({data,error})=>{if(error){setMessage(error.message);return}setAdminOrgIds((data??[]).filter(m=>m.role==='admin').map(m=>m.organization_id))})},[user])
  useEffect(()=>{void loadRequests()},[loadRequests])
  const loadCatalog=useCallback(async()=>{if(!supabase||!org)return;const {data,error}=await supabase.from('aircraft_catalog').select('id,organization_id,registration,model').in('organization_id',adminOrgIds.length?adminOrgIds:[org]).eq('active',true).order('model');if(error){setMessage(error.message);return}setCatalog((data??[]) as Aircraft[])},[org,adminOrgIds])
