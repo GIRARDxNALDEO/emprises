@@ -66,3 +66,14 @@
 .fleet-form{background:#142e3b;border:1px solid #345666;border-radius:13px;padding:20px}
 .fleet-form h3{margin:0 0 6px}
 @media(max-width:900px){.fleet-grid{grid-template-columns:1fr}}
+
+/* Official DGAC / IGN UAS restrictions overlay */
+.uas-panel{margin:0 0 12px;padding:12px 15px;border:1px solid #50687d;border-radius:10px;background:#152d3a;color:#d9eaf0}
+.uas-panel-top{display:flex;gap:18px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+.uas-panel-top strong{font-size:13px}
+.uas-panel-top label{display:flex;gap:10px;align-items:center;grid-template-columns:none;font-size:12px}
+.uas-panel-top input[type="range"]{width:120px;padding:0;accent-color:#06aaa4}
+.uas-panel p{font-size:12px;line-height:1.5;margin:8px 0;color:#b7cdd6}
+.uas-panel .uas-error{font-weight:700;color:#ffb0a5}
+.uas-links{display:flex;flex-wrap:wrap;gap:9px 18px}
+.uas-links a{font-size:12px;color:#7adad8;text-decoration:underline;text-underline-offset:3px}
