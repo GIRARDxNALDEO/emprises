@@ -11,3 +11,21 @@
 
 /* Login branding: center RHOTOR SOLUTIONS without affecting other eyebrow labels. */
 .auth-box > .eyebrow { display:block; width:100%; text-align:center; }
+
+
+/* Cartographie — saisie précise des sommets et recherche IGN */
+.map-canvas.emprises-drawing,
+.map-canvas.emprises-drawing .leaflet-container,
+.emprises-drawing .leaflet-grab,
+.emprises-drawing .leaflet-interactive,
+.emprises-drawing .leaflet-pane,
+.emprises-drawing .leaflet-overlay-pane {
+  cursor:crosshair!important;
+}
+.map-search{display:flex;gap:9px;margin-bottom:10px}
+.map-search input{flex:1;min-width:0}
+.map-search button{flex-shrink:0}
+.map-search-results{display:grid;gap:4px;margin-bottom:12px;border:1px solid #284654;border-radius:10px;padding:7px;background:#091f2a}
+.map-search-results button{text-align:left;justify-content:flex-start;font-weight:500}
+.map-drawing-hint{margin:4px 0 12px;color:#61dfd4}
+@media(max-width:650px){.map-search{flex-direction:column}.map-search button{width:100%}}
