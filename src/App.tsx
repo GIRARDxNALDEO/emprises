@@ -12,6 +12,9 @@ export default function App(){
  const [user,setUser]=useState<User|null>(null)
  const [email,setEmail]=useState('')
  const [password,setPassword]=useState('')
+ const [newPassword,setNewPassword]=useState('')
+ const [confirmPassword,setConfirmPassword]=useState('')
+ const [settingPassword,setSettingPassword]=useState(()=>/type=(invite|recovery)/.test(window.location.hash+window.location.search))
  const [message,setMessage]=useState('')
  const [orgs,setOrgs]=useState<Organization[]>([])
  const [org,setOrg]=useState('')
@@ -36,7 +39,7 @@ export default function App(){
  useEffect(()=>{
   if(!supabase)return
   supabase.auth.getUser().then(({data})=>setUser(data.user))
-  const {data:{subscription}}=supabase.auth.onAuthStateChange((_event,session)=>setUser(session?.user??null))
+  const {data:{subscription}}=supabase.auth.onAuthStateChange((event,session)=>{setUser(session?.user??null);if(event==='PASSWORD_RECOVERY')setSettingPassword(true)})
   return()=>subscription.unsubscribe()
  },[])
  const loadOrgs=useCallback(async()=>{
@@ -85,6 +88,8 @@ export default function App(){
  }
  async function deleteZone(id:string){if(!supabase||!confirm('Supprimer cette zone ?'))return;const {error}=await supabase.rpc('delete_affaire_zone',{p_zone:id});setMessage(error?.message??'Zone supprimée');if(!error)await loadZones()}
  async function login(e:React.FormEvent){e.preventDefault();if(!supabase)return;const {error}=await supabase.auth.signInWithPassword({email,password});setMessage(error?.message??'Connexion réussie')}
+ async function resetPassword(){if(!supabase)return;if(!email.trim()){setMessage('Renseigne ton adresse e-mail avant de demander un lien.');return}const {error}=await supabase.auth.resetPasswordForEmail(email.trim(),{redirectTo:window.location.origin+import.meta.env.BASE_URL});setMessage(error?.message??'Si un compte existe pour cette adresse, un courriel de réinitialisation sera envoyé.')}
+ async function setAccountPassword(e:React.FormEvent){e.preventDefault();if(!supabase)return;if(newPassword.length<12){setMessage('Utilise un mot de passe d’au moins 12 caractères.');return}if(newPassword!==confirmPassword){setMessage('Les deux mots de passe sont différents.');return}const {error}=await supabase.auth.updateUser({password:newPassword});if(error){setMessage(error.message);return}setNewPassword('');setConfirmPassword('');setSettingPassword(false);setMessage('Mot de passe défini. Ton compte est prêt.')}
  async function createAffaire(e:React.FormEvent){
   e.preventDefault();if(!supabase||!user||!org)return
   const {error}=await supabase.from('affaires').insert({organization_id:org,reference,title,client,commune,owner_id:user.id})
@@ -99,7 +104,8 @@ export default function App(){
   setSelected(null);await loadAffaires()
  }
  if(!isConfigured)return <div className="auth-page"><div className="auth-box"><h1>EMPRISES</h1><p>Configuration Supabase absente.</p><code>Copie .env.example dans .env puis renseigne VITE_SUPABASE_URL et VITE_SUPABASE_PUBLISHABLE_KEY</code></div></div>
- if(!user)return <div className="auth-page"><form onSubmit={login} className="auth-box"><img src={`${import.meta.env.BASE_URL}rhotor-logo.png`} alt="Logo RHOTOR"/><span className="eyebrow">RHOTOR SOLUTIONS</span><h1>EMPRISES</h1><p>Connexion à votre espace missions drone</p><label>Email professionnel<input type="email" required value={email} onChange={e=>setEmail(e.target.value)}/></label><label>Mot de passe<input type="password" required value={password} onChange={e=>setPassword(e.target.value)}/></label><button>Se connecter <ArrowRight size={16}/></button>{message&&<p className="hint">{message}</p>}<p className="hint">Accès réservé aux utilisateurs invités.</p></form></div>
+ if(settingPassword)return <div className="auth-page"><form onSubmit={setAccountPassword} className="auth-box"><img src={`${import.meta.env.BASE_URL}rhotor-logo.png`} alt="Logo RHOTOR"/><span className="eyebrow">RHOTOR SOLUTIONS</span><h1>EMPRISES</h1><p>Définir mon mot de passe</p><label>Nouveau mot de passe (12 caractères minimum)<input type="password" autoComplete="new-password" required minLength={12} value={newPassword} onChange={e=>setNewPassword(e.target.value)}/></label><label>Confirmer le mot de passe<input type="password" autoComplete="new-password" required minLength={12} value={confirmPassword} onChange={e=>setConfirmPassword(e.target.value)}/></label><button type="submit">Enregistrer le mot de passe <ArrowRight size={16}/></button>{message&&<p className="hint">{message}</p>}</form></div>
+ if(!user)return <div className="auth-page"><form onSubmit={login} className="auth-box"><img src={`${import.meta.env.BASE_URL}rhotor-logo.png`} alt="Logo RHOTOR"/><span className="eyebrow">RHOTOR SOLUTIONS</span><h1>EMPRISES</h1><p>Connexion à votre espace missions drone</p><label>Email professionnel<input type="email" required value={email} onChange={e=>setEmail(e.target.value)}/></label><label>Mot de passe<input type="password" required value={password} onChange={e=>setPassword(e.target.value)}/></label><button>Se connecter <ArrowRight size={16}/></button><button type="button" className="ghost" onClick={resetPassword}>Mot de passe oublié ?</button>{message&&<p className="hint">{message}</p>}<p className="hint">Accès réservé aux utilisateurs invités.</p></form></div>
  return <div className="app-shell">
   <aside className="sidebar"><div className="brand"><img src={`${import.meta.env.BASE_URL}rhotor-logo.png`} alt="RHOTOR"/><div><strong>EMPRISES</strong><small>by RHOTOR SOLUTIONS</small></div></div>
    <nav><button onClick={()=>setSelected(null)}><FolderOpen size={18}/> Mes affaires</button><button onClick={()=>{setSelected(null);setView('archive')}}><Archive size={18}/> Archives</button>{isAdmin&&<button onClick={()=>{setSelected(null);setView('trash')}}><Trash2 size={18}/> Corbeille</button>}</nav>
