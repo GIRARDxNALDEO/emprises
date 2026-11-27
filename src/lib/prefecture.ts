@@ -14,7 +14,7 @@ export function printPrefecture(affaire:{reference:string,title:string,commune:s
  if(!zones.length)throw new Error('Aucune zone à exporter.')
  const pts=zones.flatMap(coords)
  if(!pts.length)throw new Error('Géométries vides.')
- const width=1000,height=680,pad=85
+ const width=1050,height=660,pad=90
  const minLon=Math.min(...pts.map(p=>p[0])),maxLon=Math.max(...pts.map(p=>p[0]));const minLat=Math.min(...pts.map(p=>p[1])),maxLat=Math.max(...pts.map(p=>p[1]))
  let zoom=17
  while(zoom>2){const dx=(lng2x(maxLon,zoom)-lng2x(minLon,zoom))*256;const dy=(lat2y(minLat,zoom)-lat2y(maxLat,zoom))*256;if(dx<width-pad*2&&dy<height-pad*2)break;zoom--}
