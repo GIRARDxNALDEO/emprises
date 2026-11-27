@@ -2,6 +2,7 @@ import {useCallback,useEffect,useMemo,useState} from 'react'
 import {Calculator,CarFront,Download,FileText,MapPin,RefreshCw,Route,Upload} from 'lucide-react'
 import {supabase} from '../lib/supabase'
 import type {ZoneJson} from '../lib/exports'
+import {getBrandAsset} from '../lib/sharedAssets'
 type Company='RHOTOR'|'NALDEO'
 type Affaire={id:string,reference:string,title:string,client:string,commune:string,organization_id:string}
 type QuoteLine={id:string,label:string,quantity:number,unit:string,unit_price:number,total_ht:number}
@@ -73,12 +74,14 @@ export function QuoteBuilder({affaire,zones,company,estimateRevision,companyOrgI
  const [legalText,setLegalText]=useState('')
  const [payment,setPayment]=useState('Conditions de règlement à préciser avant envoi.')
  const [logo,setLogo]=useState('')
+ const [sharedLogo,setSharedLogo]=useState('')
  const [additional,setAdditional]=useState<QuoteLine[]>([])
  const [extraLabel,setExtraLabel]=useState('')
  const [extraQty,setExtraQty]=useState('1')
  const [extraRate,setExtraRate]=useState('')
  const [printError,setPrintError]=useState('')
  const point=useMemo(()=>centerOfZones(zones),[zones])
+ useEffect(()=>{let disposed=false;setSharedLogo('');void getBrandAsset(selectedCompany==='NALDEO'?'logos/naldeo-logo':'logos/rhotor-logo').then(url=>{if(!disposed)setSharedLogo(url??'')});return()=>{disposed=true}},[selectedCompany])
  const kmRate=kmRates[selectedCompany]
  useEffect(()=>{if(!supabase)return;supabase.from('app_settings').select('organization_id,setting_value').eq('setting_key','km_rate_eur').then(({data})=>{if(!data)return;setKmRates(prev=>{const next={...prev};for(const item of data){const value=Number(item.setting_value);if(!Number.isFinite(value)||value<0)continue;if(item.organization_id===companyOrgIds.RHOTOR)next.RHOTOR=value;if(item.organization_id===companyOrgIds.NALDEO)next.NALDEO=value}return next})})},[companyOrgIds.RHOTOR,companyOrgIds.NALDEO])
  useEffect(()=>{setSelectedCompany(company);setDistance('');setTripSource(null);setLogo('')},[company,affaire.id])
@@ -132,14 +135,14 @@ export function QuoteBuilder({affaire,zones,company,estimateRevision,companyOrgI
  function print(){
   if(!estimates){setPrintError('Crée d’abord un chiffrage serveur pour inclure les postes calculés du dossier.');return}
   if(includeTravel&&!validTravel){setPrintError('Complète la distance aller et le nombre d’allers-retours, ou désactive les déplacements.');return}
-  if(selectedCompany==='NALDEO'&&!logo){setPrintError('Importe le logo officiel NALDEO pour respecter la charte.');return}
+  if(selectedCompany==='NALDEO'&&!logo&&!sharedLogo){setPrintError('Importe le logo officiel NALDEO pour respecter la charte.');return}
   if(!issuerSiret.trim()){setPrintError('Renseigne le numéro SIRET de la société émettrice.');return}
   if(!clientAddress.trim()){setPrintError('Renseigne l’adresse de facturation du client.');return}
   if(!legalText.trim()){setPrintError('Renseigne les mentions fiscales/TVA applicables à la société émettrice.');return}
   if(!quoteDate){setPrintError('Renseigne la date du devis.');return}
   setPrintError('')
   const name=selectedCompany==='NALDEO'?'NALDEO':'RHOTOR'
-  const logoUrl=selectedCompany==='RHOTOR'&&!logo?new URL(`${import.meta.env.BASE_URL}rhotor-logo.png`,window.location.origin).href:logo
+  const logoUrl=logo||sharedLogo||(selectedCompany==='RHOTOR'?new URL(`${import.meta.env.BASE_URL}rhotor-logo.png`,window.location.origin).href:'')
   const lines=showLines.map(l=>`<tr><td>${esc(l.label)}</td><td class="right">${Number(l.quantity).toLocaleString('fr-FR',{maximumFractionDigits:3})}</td><td>${esc(l.unit)}</td><td class="right">${formatEur(Number(l.unit_price))}</td><td class="right">${formatEur(Number(l.total_ht))}</td></tr>`).join('')
   const kmRow=includeTravel?`<tr><td>Déplacements routiers : ${esc(addresses[selectedCompany])} ↔ ${esc(affaire.commune||'site mission')} (${tripCount} aller-retour(s), ${kmOneWay.toLocaleString('fr-FR',{maximumFractionDigits:1})} km aller)</td><td class="right">${totalKm.toLocaleString('fr-FR',{maximumFractionDigits:1})}</td><td>km</td><td class="right">${formatEur(kmRate)}/km</td><td class="right">${formatEur(mileageCost)}</td></tr>`:''
   const disclaimer=includeTravel?`<div class="note">Déplacements facturés au tarif commercial de ${formatEur(kmRate)}/km, selon le barème administrateur. Distance ${tripSource==='ign'?'estimée via IGN et à confirmer':'saisie manuellement'}. Péages et stationnement non inclus. Ce tarif est distinct du barème fiscal officiel.</div>`:''
@@ -192,7 +195,7 @@ export function QuoteBuilder({affaire,zones,company,estimateRevision,companyOrgI
  <div className="quote-section"><h4><FileText size={17}/> Identification et mentions du devis</h4><div className="quote-grid">
  <label>Date d'émission<input type="date" value={quoteDate} onChange={e=>setQuoteDate(e.target.value)}/></label><label>Validité (jours)<input type="number" min="1" max="365" value={validity} onChange={e=>setValidity(e.target.value)}/></label>
  <label>N° SIRET de l'émetteur<input value={issuerSiret} onChange={e=>setIssuerSiret(e.target.value)} placeholder="À renseigner"/></label>
- <label className="quote-file"><Upload size={14}/> Logo officiel {selectedCompany}<input type="file" accept="image/jpeg,image/png,image/webp" onChange={e=>void uploadLogo(e)}/><small>{logo?'Logo chargé':selectedCompany==='RHOTOR'?'Logo RHOTOR du site utilisé par défaut':'Logo officiel NALDEO requis'}</small></label>
+ <label className="quote-file"><Upload size={14}/> Logo officiel {selectedCompany}<input type="file" accept="image/jpeg,image/png,image/webp" onChange={e=>void uploadLogo(e)}/><small>{logo?'Logo remplacé pour ce devis':sharedLogo?'Logo officiel chargé automatiquement depuis les ressources communes':selectedCompany==='RHOTOR'?'Logo RHOTOR du site utilisé par défaut':'Logo NALDEO non encore installé dans la bibliothèque commune'}</small></label>
  <label>Adresse du client<textarea rows={3} value={clientAddress} onChange={e=>setClientAddress(e.target.value)} placeholder="Adresse de facturation complète"/></label>
  <label>Mentions fiscales / TVA<textarea rows={3} value={legalText} onChange={e=>setLegalText(e.target.value)} placeholder="Ex. TVA applicable et taux / franchise en base si légalement applicable"/></label>
  <label className="quote-full">Conditions de règlement<textarea rows={2} value={payment} onChange={e=>setPayment(e.target.value)}/></label>
